@@ -9,7 +9,12 @@ where
 {
     let (tx, rx) = mpsc::channel::<notify::Result<Event>>();
     let mut watcher = notify::recommended_watcher(tx)?;
-    watcher.watch(Path::new(rules[0].watch_path.as_str()), RecursiveMode::Recursive)?;
+
+    for rule in rules {
+        let path = Path::new(rule.watch_path.as_str());
+        watcher.watch(path, RecursiveMode::Recursive)?;
+    }
+
     for res in rx {
         match res {
             Ok(event) => callback(event),
