@@ -1,5 +1,5 @@
 mod watcher;
-mod rule;
+mod config;
 mod models;
 mod matcher;
 
@@ -9,9 +9,6 @@ use notify::Error;
 #[derive(Parser, Debug)]
 #[command(name = "willow", version, about = "Watch a directory for file changes", long_about = None)]
 pub struct Cli {
-    /// Target directory to watch
-    pub target: String,
-
     /// Optional config file
     #[arg(short, long)]
     pub config: Option<String>,
@@ -22,7 +19,7 @@ fn main() -> Result <(), Error>{
     let cli = Cli::parse();
     // parse config
 
-    let rules = rule::load(cli.target);
+    let rules = config::load(cli.config.unwrap())?;
 
     // watch for events and
     watcher::watch(&rules, |event| {

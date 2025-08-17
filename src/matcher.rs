@@ -1,6 +1,6 @@
-use crate::models::Rule;
+use crate::models::{Config, Rule};
 use notify::Event;
 
-pub fn apply(rules: &Vec<Rule>, event: &Event) {
-    unimplemented!()
+pub fn apply(config: &Config, event: &Event) {
+    println!("{:?} - {:?}", config, event)
 }

@@ -1,5 +1,8 @@
 
+[[rules]]
+watch="/Users/saeed/Downloads"
+action=""
 
-[[rule]]
-watch="~/Downloads"
+[[rules]]
+watch="./"
 action=""

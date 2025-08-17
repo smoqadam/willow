@@ -1,17 +1,17 @@
 use notify::{Error, Event, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
-use crate::models::Rule;
+use crate::models::{Config, Rule};
 
-pub fn watch<T>(rules: &Vec<Rule>, callback: T) -> Result<(), Error>
+pub fn watch<T>(config: &Config, callback: T) -> Result<(), Error>
 where
     T: Fn(Event),
 {
     let (tx, rx) = mpsc::channel::<notify::Result<Event>>();
     let mut watcher = notify::recommended_watcher(tx)?;
 
-    for rule in rules {
-        let path = Path::new(rule.watch_path.as_str());
+    for rule in &config.rules {
+        let path = Path::new(rule.watch.as_str());
         watcher.watch(path, RecursiveMode::Recursive)?;
     }
 
