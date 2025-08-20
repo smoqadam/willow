@@ -1,8 +1,26 @@
+# Which directories to watch
+[[watchers]]
+path = "/home/user/Downloads"
+recursive = true
 
-[[rules]]
-watch="/Users/saeed/Downloads"
-action=""
+# Conditions for this watcher
+[[watchers.rules]]
+event = "create"        # or "modify", "delete"
+pattern = "*.jpg"       # glob or regex
+size_gt = 0             # optional filters (bytes, etc.)
 
-[[rules]]
-watch="./"
-action=""
+# Actions for matching files
+[[watchers.rules.actions]]
+type = "move"
+destination = "/home/user/Photos"
+
+
+[[watchers.rules.actions]]
+type = "rename"
+destination = "/home/user/Photos"
+
+
+
+[[watchers.rules.actions]]
+type = "log"
+message = "New photo added: {file}"

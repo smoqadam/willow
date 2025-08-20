@@ -2,6 +2,7 @@ mod watcher;
 mod config;
 mod models;
 mod matcher;
+mod actions;
 
 use clap::Parser;
 use notify::Error;
@@ -18,13 +19,16 @@ pub struct Cli {
 fn main() -> Result <(), Error>{
     let cli = Cli::parse();
     // parse config
+    let config = config::load(cli.config.unwrap())?;
 
-    let rules = config::load(cli.config.unwrap())?;
+    // println!("{:?}", config);
+    // watcher::start(config);
 
-    // watch for events and
-    watcher::watch(&rules, |event| {
-        matcher::apply(&rules, &event);
-    })?;
+    //
+    // // watch for events and
+    // watcher::watch(&config, |event| {
+    //     matcher::apply(&config, &event);
+    // })?;
 
     Ok(())
 }
