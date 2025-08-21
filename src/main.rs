@@ -8,6 +8,7 @@ mod rules;
 
 use clap::Parser;
 use notify::Error;
+use actions::*;
 
 #[derive(Parser, Debug)]
 #[command(name = "willow", version, about = "Watch a directory for file changes", long_about = None)]
@@ -26,7 +27,13 @@ fn main() -> Result <(), Error>{
     for event in rx {
         let matched_rules = rules::from_event(&event, &config);
         for rule in matched_rules {
-            println!("Rule matched: {:?}", rule);
+            println!("Rule matched: {:?}", rule.event);
+            for action in &rule.actions {
+                action.run(&ActionContext {
+                    paths: &event.paths,
+                    event: &event.event,
+                });
+            }
         }
     }
 

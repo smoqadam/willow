@@ -1,5 +1,7 @@
 use serde_derive::Deserialize;
 use std::path::PathBuf;
+use glob::Paths;
+use crate::actions::ActionRunner;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -13,14 +15,33 @@ pub struct Watcher {
     pub rules: Vec<Rule>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Rule {
     pub event: Event,
     pub actions: Vec<Action>,
     pub conditions: Vec<Condition>,
 }
+pub struct RuleEngine {
+    pub event: Event,
+    pub actions: Vec<Box<dyn ActionRunner>>,
+    pub conditions: Vec<Condition>,
+}
 
-#[derive(Deserialize, Debug, PartialEq)]
+impl From<Rule> for RuleEngine {
+    fn from(raw: Rule) -> Self {
+        RuleEngine {
+            event: raw.event,
+            actions: raw.actions.into_iter()
+                .map(|a| a.into_exec()) // turn into trait objects
+                .collect(),
+            conditions: raw.conditions,
+        }
+    }
+}
+
+
+
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Event {
     Created,
@@ -28,7 +49,7 @@ pub enum Event {
     Deleted,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Action {
     Move { destination: String },
@@ -41,7 +62,7 @@ pub struct EventInfo {
     pub event: Event,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Condition {
     Regex { value: String },
