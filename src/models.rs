@@ -1,4 +1,5 @@
 use serde_derive::Deserialize;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -19,7 +20,7 @@ pub struct Rule {
     pub conditions: Vec<Condition>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Event {
     Created,
@@ -33,6 +34,11 @@ pub enum Action {
     Move { destination: String },
     Rename { template: String },
     Log { message: String },
+}
+
+pub struct EventInfo {
+    pub paths: Vec<PathBuf>,
+    pub event: Event,
 }
 
 #[derive(Deserialize, Debug)]

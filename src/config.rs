@@ -1,4 +1,4 @@
-use crate::models::{Config, Rule};
+use crate::models::Config;
 use std::fs;
 use std::io::Error;
 

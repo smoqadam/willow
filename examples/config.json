@@ -1,0 +1,60 @@
+{
+  "watchers": [
+    {
+      "path": "/Users/saeed/Downloads",
+      "recursive": true,
+      "rules": [
+        {
+          "event": "created",
+          "conditions": [
+            {
+              "type": "contains",
+              "text": "test"
+            }
+          ],
+          "actions": [
+            {
+              "type": "move",
+              "destination": "/home/user/Photos"
+            },
+            {
+              "type": "rename",
+              "template": "{name}_{date}.{ext}"
+            },
+            {
+              "type": "log",
+              "message": "New photo: {file}"
+            }
+          ]
+        },
+        {
+          "event": "modified",
+          "conditions": [
+            {
+              "type": "glob",
+              "value": "*.txt"
+            },
+            {
+              "type": "regex",
+              "value": "[a-zA-Z0-9]_test\\.(jpg)"
+            },
+            {
+              "type": "sizegt",
+              "value": 1024
+            }
+          ],
+          "actions": [
+            {
+              "type": "rename",
+              "template": "{name}_{date}.{ext}"
+            },
+            {
+              "type": "log",
+              "message": "file modified: {file}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
