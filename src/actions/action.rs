@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use crate::models::{Action, Event, Rule};
 //
 // pub trait Action {
@@ -30,7 +31,17 @@ pub struct MoveAction {
 
 impl ActionRunner for MoveAction {
     fn run(&self, ctx: &ActionContext) -> anyhow::Result<()> {
-        println!("Moving {:?} to {}", ctx.paths, self.destination);
+        let dest_dir = Path::new(&self.destination);
+
+        for p in ctx.paths {
+            let filename = p.file_name()
+                .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", p))?;
+
+            let dest_path = dest_dir.join(filename);
+            fs::rename(p, &dest_path)
+                .map_err(|e| anyhow::anyhow!("Failed to move {:?} to {:?}: {}", p, dest_path, e))?;
+        }
+
         Ok(())
     }
 }

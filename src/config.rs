@@ -1,8 +1,8 @@
 use crate::models::Config;
 use std::fs;
-use std::io::Error;
+use anyhow::Result;
 
-pub fn load(path: String) -> Result<Config, Error> {
+pub fn load(path: String) -> Result<Config> {
     println!("{:?}", path);
     let content = fs::read_to_string(path)?;
     // println!("{:?}", content);

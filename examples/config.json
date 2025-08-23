@@ -15,7 +15,7 @@
           "actions": [
             {
               "type": "move",
-              "destination": "/home/user/Photos"
+              "destination": "/Users/saeed/Pictures"
             },
             {
               "type": "rename",

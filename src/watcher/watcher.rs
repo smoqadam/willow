@@ -1,13 +1,14 @@
 use crate::models::{Config, Event, EventInfo};
 use notify::Event as NotifyEvent;
 use notify::event::ModifyKind;
-use notify::{Error, EventKind, RecursiveMode, Watcher as NotifyWatcher};
+use notify::{EventKind, RecursiveMode, Watcher as NotifyWatcher};
 use std::path::Path;
 use std::sync::mpsc;
+use anyhow::Result;
 
 pub fn watch(
     config: &Config,
-) -> Result<(notify::RecommendedWatcher, mpsc::Receiver<EventInfo>), Error> {
+) -> Result<(notify::RecommendedWatcher, mpsc::Receiver<EventInfo>)> {
     let (tx, rx) = mpsc::channel();
     let mut watcher = notify::recommended_watcher(move |res: Result<NotifyEvent, _>| {
         if let Ok(event) = res {
