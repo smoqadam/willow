@@ -17,6 +17,7 @@ pub fn watch(config: &Config) -> Result<(Debouncer<RecommendedWatcher, FileIdMap
         move |result: DebounceEventResult| {
             if let Ok(events) = result {
                 for debounced_event in &events {
+                    println!("debouced: {:?}", debounced_event);
                     let ev = EventInfo {
                         event: match debounced_event.kind {
                             EventKind::Create(_) => Event::Created,
@@ -27,7 +28,8 @@ pub fn watch(config: &Config) -> Result<(Debouncer<RecommendedWatcher, FileIdMap
                                 return
                             },
                         },
-                        paths: debounced_event.paths.clone(),
+                        // always get the last path. todo: is it safe?
+                        path: debounced_event.paths[debounced_event.paths.len() -1 ].clone(),
                     };
                     let _ = tx.send(ev);
                 }

@@ -59,7 +59,7 @@ pub enum Action {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct EventInfo {
-    pub paths: Vec<PathBuf>,
+    pub path: PathBuf,
     pub event: Event,
 }
 

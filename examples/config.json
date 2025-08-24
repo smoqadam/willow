@@ -8,22 +8,14 @@
           "event": "created",
           "conditions": [
             {
-              "type": "contains",
-              "text": "test"
+              "type": "glob",
+              "value": "*.jpg"
             }
           ],
           "actions": [
             {
               "type": "move",
               "destination": "/Users/saeed/Pictures"
-            },
-            {
-              "type": "rename",
-              "template": "{name}_{date}.{ext}"
-            },
-            {
-              "type": "log",
-              "message": "New photo: {file}"
             }
           ]
         },
@@ -35,12 +27,8 @@
               "value": "*.txt"
             },
             {
-              "type": "regex",
-              "value": "[a-zA-Z0-9]_test\\.(jpg)"
-            },
-            {
-              "type": "sizegt",
-              "value": 1024
+              "type": "contains",
+              "text": "test"
             }
           ],
           "actions": [

@@ -27,9 +27,10 @@ fn main() -> Result<()> {
         let matched_rules = rules::from_event(&event_info, &config);
         for rule in matched_rules {
             println!("Rule matched: {:?}", rule.event);
+            println!("conditions matched: {:?}", rule.conditions);
             for action in &rule.actions {
                 if let Err(e) = action.run(&ActionContext {
-                    paths: &event_info.paths,
+                    path: &event_info.path,
                     event: &event_info.event,
                 }) {
                     eprintln!("Action failed: {}", e);
