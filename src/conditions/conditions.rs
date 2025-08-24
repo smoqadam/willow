@@ -33,7 +33,7 @@ impl Condition {
                 fs::metadata(&event.path).map_or(false, |m| (m.len() as i64) < *value)
             }
 
-            Condition::Contains { text } => event.path.to_str().unwrap_or("").contains(text),
+            Condition::Contains { value } => event.path.to_str().unwrap_or("").contains(value),
         }
     }
 }

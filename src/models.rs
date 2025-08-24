@@ -1,6 +1,5 @@
 use serde_derive::Deserialize;
 use std::path::PathBuf;
-use crate::actions::ActionRunner;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -20,23 +19,6 @@ pub struct Rule {
     pub actions: Vec<Action>,
     pub conditions: Vec<Condition>,
 }
-pub struct RuleEngine {
-    pub event: Event,
-    pub actions: Vec<Box<dyn ActionRunner>>,
-}
-
-impl From<Rule> for RuleEngine {
-    fn from(raw: Rule) -> Self {
-        RuleEngine {
-            event: raw.event,
-            actions: raw.actions.into_iter()
-                .map(|a| a.into_exec()) // turn into trait objects
-                .collect(),
-        }
-    }
-}
-
-
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -68,5 +50,5 @@ pub enum Condition {
     Extension { value: String },
     SizeGt { value: i64 },
     SizeLt { value: i64 },
-    Contains { text: String },
+    Contains { value: String },
 }

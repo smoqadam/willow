@@ -28,7 +28,7 @@
             },
             {
               "type": "contains",
-              "text": "test"
+              "value": "test"
             }
           ],
           "actions": [
