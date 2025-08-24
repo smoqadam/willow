@@ -3,11 +3,11 @@ use std::fs;
 use anyhow::Result;
 
 pub fn load(path: String) -> Result<Config> {
-    println!("{:?}", path);
+    // println!("{:?}", path);
     let content = fs::read_to_string(path)?;
     // println!("{:?}", content);
     let config: Config = serde_json::from_str(content.as_str())?;
-    println!("{:?}", config);
+    // println!("{:?}", config);
 
     Ok(config)
 }

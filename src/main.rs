@@ -23,11 +23,11 @@ fn main() -> Result<()> {
 
     let (_w, rx) = watcher::watch(&config)?;
     for event_info in rx {
-        println!("{:?}", event_info);
+        // println!("{:?}", event_info);
         let matched_rules = rules::from_event(&event_info, &config);
         for rule in matched_rules {
             println!("Rule matched: {:?}", rule.event);
-            println!("conditions matched: {:?}", rule.conditions);
+            // println!("conditions matched: {:?}", rule.conditions);
             for action in &rule.actions {
                 if let Err(e) = action.run(&ActionContext {
                     path: &event_info.path,

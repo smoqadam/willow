@@ -1,7 +1,7 @@
 {
   "watchers": [
     {
-      "path": "/Users/saeed/Downloads",
+      "path": "/Users/saeed/watcher",
       "recursive": true,
       "rules": [
         {
