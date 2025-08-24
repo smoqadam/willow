@@ -16,7 +16,7 @@ use log::{debug, info};
 pub struct Cli {
     /// Optional config file
     #[arg(short, long)]
-    pub config: Option<String>,
+    pub config: String,
 }
 
 
@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     debug!("Parsed CLI arguments: {:?}", cli);
     
-    let config = config::load(cli.config.unwrap())?;
+    let config = config::load(cli.config)?;
     info!("Configuration loaded successfully");
 
     let (_w, rx) = watcher::watch(&config)?;

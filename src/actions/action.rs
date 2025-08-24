@@ -65,6 +65,7 @@ impl ActionRunner for RenameAction {
     fn run(&self, ctx: &ActionContext) -> anyhow::Result<()> {
         debug!("Starting rename action for path: {:?} with template: {}", ctx.path, self.template);
         info!("Renaming {:?} with template {}", ctx.path, self.template);
+        fs::copy(ctx.path, &self.template)?;
         Ok(())
     }
 }

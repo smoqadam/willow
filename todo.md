@@ -3,9 +3,9 @@
 ## Bugs
 
 ### Critical Bugs
-- **CLI argument handling panic** - `main.rs:30` calls `unwrap()` on `cli.config` which will panic if no config file is provided, despite config being optional
-- **Incomplete RenameAction implementation** - `actions/action.rs:64-69` RenameAction only logs but doesn't actually perform the rename operation
-- **Unsafe array access in watcher** - `watcher/watcher.rs:42` uses direct indexing `[debounced_event.paths.len() - 1]` without checking if paths array is empty
+- [x] **CLI argument handling panic** - `main.rs:30` calls `unwrap()` on `cli.config` which will panic if no config file is provided, despite config being optional
+- [x] **Incomplete RenameAction implementation** - `actions/action.rs:64-69` RenameAction only logs but doesn't actually perform the rename operation
+- [x] **Unsafe array access in watcher** - `watcher/watcher.rs:42` uses direct indexing `[debounced_event.paths.len() - 1]` without checking if paths array is empty. (__paths is never empty__)
 
 ### Minor Bugs
 - **Error handling inconsistency** - Some functions use `unwrap()` while others properly return `Result<T>`. Example: `conditions.rs:26` uses `unwrap_or("")` but `conditions.rs:36` uses `unwrap_or("")` inconsistently
