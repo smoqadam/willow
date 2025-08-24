@@ -9,7 +9,7 @@ mod watcher;
 use actions::*;
 use anyhow::Result;
 use clap::Parser;
-use log::{Level, debug, error, info, log_enabled};
+use log::{debug, info};
 
 #[derive(Parser, Debug)]
 #[command(name = "willow", version, about = "Watch a directory for file changes", long_about = None)]

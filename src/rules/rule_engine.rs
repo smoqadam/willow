@@ -7,7 +7,7 @@ pub fn from_event(event: &EventInfo, config: &Config) -> Vec<RuleEngine> {
         .flat_map(|w| {
             w.rules
                 .iter()
-                .filter(|rule| rule.event == event.event)
+                .filter(|rule| rule.matches(event))
                 .cloned() // Rule
                 .map(RuleEngine::from) // Rule -> RuleEngine
                 .collect::<Vec<_>>()

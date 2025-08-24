@@ -1,11 +1,11 @@
 use crate::models::{Config, Event, EventInfo};
 use anyhow::Result;
-use log::{Level, debug, error, info, log_enabled};
+use log::{debug, error, info};
 use notify::RecommendedWatcher;
 use notify::event::ModifyKind;
-use notify::{EventKind, RecursiveMode, Watcher as NotifyWatcher};
+use notify::{EventKind, RecursiveMode};
 use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
 

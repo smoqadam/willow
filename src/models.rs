@@ -1,6 +1,5 @@
 use serde_derive::Deserialize;
 use std::path::PathBuf;
-use glob::Paths;
 use crate::actions::ActionRunner;
 
 #[derive(Deserialize, Debug)]
@@ -24,9 +23,11 @@ pub struct Rule {
 pub struct RuleEngine {
     pub event: Event,
     pub actions: Vec<Box<dyn ActionRunner>>,
-    pub conditions: Vec<Condition>,
+    pub conditions:Vec<Box<dyn ConditionChecker>>,
 }
+trait ConditionChecker {
 
+}
 impl From<Rule> for RuleEngine {
     fn from(raw: Rule) -> Self {
         RuleEngine {

@@ -1,11 +1,7 @@
-use crate::models::{Action, Event, Rule};
+use crate::models::{Action, Event};
 use std::fs;
 use std::path::{Path, PathBuf};
 use log::{debug, error, info};
-//
-// pub trait Action {
-//     fn execute();
-// }
 
 pub struct ActionContext<'a> {
     pub path: &'a PathBuf,
@@ -42,6 +38,7 @@ pub struct MoveAction {
 impl ActionRunner for MoveAction {
     fn run(&self, ctx: &ActionContext) -> anyhow::Result<()> {
         debug!("Starting move action for path: {:?}", ctx.path);
+        debug!("Starting move action for event: {:?}", ctx.event);
         let dest_dir = Path::new(&self.destination);
         let filename = ctx
             .path
