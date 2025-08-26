@@ -1,7 +1,6 @@
 use serde_derive::Deserialize;
-use crate::models::Event;
 use crate::conditions::{
-    Condition, EventCondition, RegexCondition, GlobCondition, 
+    Condition, RegexCondition, GlobCondition, 
     ExtensionCondition, SizeGtCondition, SizeLtCondition, ContainsCondition
 };
 

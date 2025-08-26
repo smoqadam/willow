@@ -11,7 +11,7 @@ mod template;
 use std::thread;
 use anyhow::Result;
 use clap::Parser;
-use log::{debug, info};
+use log::debug;
 
 #[derive(Parser, Debug)]
 #[command(name = "willow", version, about = "Watch a directory for file changes", long_about = None)]

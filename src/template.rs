@@ -1,6 +1,5 @@
 
 use crate::models::EventInfo;
-use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Template {
