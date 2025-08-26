@@ -19,10 +19,14 @@ impl Action for RenameAction {
         debug!("Starting rename action for path: {:?} with template: {}", event_info.path, self.template);
         
         let template = Template::new(self.template.clone());
-        let rendered_name = template.render();
+        let rendered_name = template.render(event_info);
         
-        info!("Renaming {:?} with template {}", event_info.path, rendered_name);
-        fs::copy(&event_info.path, &rendered_name)?;
+        let parent_dir = event_info.path.parent()
+            .ok_or_else(|| anyhow::anyhow!("No parent directory for path {:?}", event_info.path))?;
+        let new_path = parent_dir.join(&rendered_name);
+        
+        info!("Renaming {:?} to {:?}", event_info.path, new_path);
+        fs::rename(&event_info.path, &new_path)?;
         Ok(())
     }
 }
