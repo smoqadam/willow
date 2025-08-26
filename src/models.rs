@@ -1,4 +1,7 @@
 use crate::condition::ConditionConfig;
+use crate::action::ActionConfig;
+use crate::conditions::Condition;
+use crate::actions::Action;
 use serde_derive::Deserialize;
 use std::path::PathBuf;
 
@@ -11,8 +14,15 @@ pub struct Config {
 pub struct Watcher {
     pub path: String,
     pub recursive: bool,
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionConfig>,
     pub conditions: Vec<ConditionConfig>,
+}
+
+pub struct RuntimeWatcher {
+    pub path: String,
+    pub recursive: bool,
+    pub actions: Vec<Box<dyn Action>>,
+    pub conditions: Vec<Box<dyn Condition>>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]
@@ -22,14 +32,6 @@ pub enum Event {
     Modified,
     Deleted,
     Unsupported,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub enum Action {
-    Move { destination: String },
-    Rename { template: String },
-    Log { message: String },
 }
 
 #[derive(Deserialize, Debug, Clone)]

@@ -1,8 +1,6 @@
-use crate::action::ActionContext;
-use crate::models::{Config};
+use crate::models::{Config, RuntimeWatcher};
 use log::{error, info};
 use std::thread;
-use crate::watcher::RuntimeWatcher;
 
 pub fn start(config: &Config) -> anyhow::Result<()> {
     for watcher_config in &config.watchers {
@@ -12,10 +10,16 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
             conditions.push(condition_config.clone().into_condition()?);
         }
 
+        // Convert ActionConfig to trait objects
+        let mut actions: Vec<Box<dyn crate::actions::Action>> = Vec::new();
+        for action_config in &watcher_config.actions {
+            actions.push(action_config.clone().into_action());
+        }
+
         let runtime_watcher = RuntimeWatcher {
             path: watcher_config.path.clone(),
             recursive: watcher_config.recursive,
-            actions: watcher_config.actions.clone(),
+            actions,
             conditions,
         };
 
@@ -28,11 +32,7 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
                 if all {
                     info!("all conditions matched for {}", runtime_watcher.path);
                     for action in &runtime_watcher.actions {
-                        let exec = action.clone().into_exec();
-                        if let Err(e) = exec.run(&ActionContext {
-                            path: &ev.path,
-                            event: &ev.event,
-                        }) {
+                        if let Err(e) = action.run(&ev) {
                             error!("Action failed on {}: {:?}", ev.path.display(), e);
                             break;
                         }

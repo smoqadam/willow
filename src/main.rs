@@ -6,9 +6,9 @@ mod watcher;
 mod engine;
 mod action;
 mod conditions;
+mod template;
 
 use std::thread;
-use actions::*;
 use anyhow::Result;
 use clap::Parser;
 use log::{debug, info};

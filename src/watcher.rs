@@ -2,16 +2,8 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode};
-use crate::models::{Action, Event, EventInfo};
+use crate::models::{Event, EventInfo, RuntimeWatcher};
 use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
-use crate::conditions::Condition;
-
-pub struct RuntimeWatcher {
-    pub path: String,
-    pub recursive: bool,
-    pub actions: Vec<Action>,
-    pub conditions: Vec<Box<dyn Condition>>,
-}
 
 
 impl RuntimeWatcher {

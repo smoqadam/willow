@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use crate::models::{Config, Watcher};
+use crate::models::Config;
 use std::fs;
 use anyhow::Result;
 
