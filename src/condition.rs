@@ -8,7 +8,6 @@ use crate::conditions::{
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum ConditionConfig {
-    Event { value: Event },
     Regex { value: String },
     Glob { value: String },
     Extension { value: String },
@@ -20,7 +19,6 @@ pub enum ConditionConfig {
 impl ConditionConfig {
     pub fn into_condition(self) -> anyhow::Result<Box<dyn Condition>> {
         match self {
-            ConditionConfig::Event { value } => Ok(Box::new(EventCondition::new(value))),
             ConditionConfig::Regex { value } => Ok(Box::new(RegexCondition::new(value)?)),
             ConditionConfig::Glob { value } => Ok(Box::new(GlobCondition::new(value)?)),
             ConditionConfig::Extension { value } => Ok(Box::new(ExtensionCondition::new(value))),

@@ -19,6 +19,7 @@ pub struct Watcher {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Rule {
+    pub event: Event,
     pub conditions: Vec<ConditionConfig>,
     pub actions: Vec<ActionConfig>,
 }

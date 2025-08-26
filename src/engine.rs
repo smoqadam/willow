@@ -10,6 +10,9 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
         for rule in &watcher_config.rules {
             // Convert ConditionConfig to trait objects
             let mut conditions: Vec<Box<dyn crate::conditions::Condition>> = Vec::new();
+            // Add the event condition first
+            conditions.push(Box::new(crate::conditions::EventCondition::new(rule.event.clone())));
+            // Then add the other conditions
             for condition_config in &rule.conditions {
                 conditions.push(condition_config.clone().into_condition()?);
             }

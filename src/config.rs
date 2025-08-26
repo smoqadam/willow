@@ -6,7 +6,7 @@ pub fn load<'a>(path: String) -> Result<Config> {
     // println!("{:?}", path);
     let content = fs::read_to_string(path)?;
     // println!("{:?}", content);
-    let config: Config = serde_json::from_str(content.as_str())?;
+    let config: Config = serde_yaml::from_str(content.as_str())?;
     // println!("{:?}", config);
    Ok(config)
 }

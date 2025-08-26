@@ -1,0 +1,41 @@
+watchers:
+  - path: "/Users/saeed/watcher"
+    recursive: true
+    rules:
+      - event: "created"
+        conditions:
+          - type: "extension"
+            value: "jpg"
+        actions:
+          - type: "move"
+            destination: "/Users/saeed/Pictures/"
+      - event: "created"
+        conditions:
+          - type: "extension"
+            value: "pdf"
+        actions:
+          - type: "move"
+            destination: "/Users/saeed/Documents/PDFs/"
+  - path: "/Users/saeed/Downloads"
+    recursive: false
+    rules:
+      - event: "modified"
+        conditions:
+          - type: "extension"
+            value: "txt"
+          - type: "contains"
+            value: "test"
+        actions:
+          - type: "rename"
+            template: "{name}_{date}.{ext}"
+          - type: "log"
+            message: "Test file modified: {filename} at {datetime}"
+      - event: "created"
+        conditions:
+          - type: "extension"
+            value: "zip"
+        actions:
+          - type: "log"
+            message: "New archive created: {filename}"
+          - type: "move"
+            destination: "/Users/saeed/Archives/{date}/"
