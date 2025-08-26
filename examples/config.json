@@ -3,44 +3,48 @@
     {
       "path": "/Users/saeed/watcher",
       "recursive": true,
-      "rules": [
+      "conditions": [
         {
-          "event": "created",
-          "conditions": [
-            {
-              "type": "glob",
-              "value": "*.jpg"
-            }
-          ],
-          "actions": [
-            {
-              "type": "move",
-              "destination": "/Users/saeed/Pictures"
-            }
-          ]
+          "type": "event",
+          "value": "created"
         },
         {
-          "event": "modified",
-          "conditions": [
-            {
-              "type": "glob",
-              "value": "*.txt"
-            },
-            {
-              "type": "contains",
-              "value": "test"
-            }
-          ],
-          "actions": [
-            {
-              "type": "rename",
-              "template": "{name}_{date}.{ext}"
-            },
-            {
-              "type": "log",
-              "message": "file modified: {file}"
-            }
-          ]
+          "type": "glob",
+          "value": "*.jpg"
+        }
+      ],
+      "actions": [
+        {
+          "type": "move",
+          "destination": "/Users/saeed/Pictures"
+        }
+      ]
+    },
+    {
+      "path": "/Users/saeed/Downloads",
+      "recursive": false,
+      "conditions": [
+        {
+          "type": "event",
+          "value": "modified"
+        },
+        {
+          "type": "glob",
+          "value": "*.txt"
+        },
+        {
+          "type": "contains",
+          "value": "test"
+        }
+      ],
+      "actions": [
+        {
+          "type": "rename",
+          "template": "{name}_{date}.{ext}"
+        },
+        {
+          "type": "log",
+          "message": "file modified: {file}"
         }
       ]
     }

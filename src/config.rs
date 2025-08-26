@@ -1,13 +1,13 @@
-use crate::models::Config;
+use std::collections::HashMap;
+use crate::models::{Config, Watcher};
 use std::fs;
 use anyhow::Result;
 
-pub fn load(path: String) -> Result<Config> {
+pub fn load<'a>(path: String) -> Result<Config> {
     // println!("{:?}", path);
     let content = fs::read_to_string(path)?;
     // println!("{:?}", content);
     let config: Config = serde_json::from_str(content.as_str())?;
     // println!("{:?}", config);
-
-    Ok(config)
+   Ok(config)
 }

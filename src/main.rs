@@ -1,11 +1,14 @@
 mod actions;
-mod conditions;
+mod condition;
 mod config;
-mod matcher;
 mod models;
-mod rules;
 mod watcher;
+mod engine;
+mod action;
+mod condition;
+mod conditions;
 
+use std::thread;
 use actions::*;
 use anyhow::Result;
 use clap::Parser;
@@ -28,29 +31,11 @@ fn main() -> Result<()> {
     debug!("Parsed CLI arguments: {:?}", cli);
     
     let config = config::load(cli.config)?;
-    info!("Configuration loaded successfully");
+    debug!("Parsed CLI arguments: {:?}", config);
 
-    let (_w, rx) = watcher::watch(&config)?;
-    info!("Started watching directories, waiting for file events...");
-    
-    for event_info in rx {
-        debug!("Received event: {:?} for path: {:?}", event_info.event, event_info.path);
-        let matched_rules = rules::from_event(&event_info, &config);
-        debug!("Found {} matching rules for event", matched_rules.len());
-        
-        for rule in matched_rules {
-            info!("Rule matched: {:?}", rule.event);
-            for action in &rule.actions {
-                // debug!("Executing action: {:?}", action);
-                if let Err(e) = action.run(&ActionContext {
-                    path: &event_info.path,
-                    event: &event_info.event,
-                }) {
-                    eprintln!("Action failed: {}", e);
-                }
-            }
-        }
+    engine::start(&config)?;
+    loop {
+        thread::park();
     }
-
     Ok(())
 }

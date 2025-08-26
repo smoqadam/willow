@@ -1,21 +1,17 @@
 use serde_derive::Deserialize;
 use std::path::PathBuf;
+use notify::EventKind;
+use crate::condition::Condition;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub watchers: Vec<Watcher>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Watcher {
     pub path: String,
     pub recursive: bool,
-    pub rules: Vec<Rule>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct Rule {
-    pub event: Event,
     pub actions: Vec<Action>,
     pub conditions: Vec<Condition>,
 }
@@ -26,6 +22,7 @@ pub enum Event {
     Created,
     Modified,
     Deleted,
+    Unsupported,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -40,15 +37,4 @@ pub enum Action {
 pub struct EventInfo {
     pub path: PathBuf,
     pub event: Event,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub enum Condition {
-    Regex { value: String },
-    Glob { value: String },
-    Extension { value: String },
-    SizeGt { value: i64 },
-    SizeLt { value: i64 },
-    Contains { value: String },
 }

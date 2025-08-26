@@ -39,20 +39,20 @@ impl ActionRunner for MoveAction {
     fn run(&self, ctx: &ActionContext) -> anyhow::Result<()> {
         debug!("Starting move action for path: {:?}", ctx.path);
         debug!("Starting move action for event: {:?}", ctx.event);
-        let dest_dir = Path::new(&self.destination);
-        let filename = ctx
-            .path
-            .file_name()
-            .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", ctx.path))?;
-
-        let dest_path = dest_dir.join(filename);
-        debug!("Moving {:?} to {:?}", ctx.path, dest_path);
-        
-        fs::rename(&ctx.path, &dest_path).map_err(|e| {
-            error!("Move action error: {:?}", e);
-            anyhow::anyhow!("Failed to move {:?} to {:?}: {}", ctx.path, dest_path, e)
-        })?;
-        info!("moved {:?} to {:?}", ctx.path, dest_path);
+        // let dest_dir = Path::new(&self.destination);
+        // let filename = ctx
+        //     .path
+        //     .file_name()
+        //     .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", ctx.path))?;
+        //
+        // let dest_path = dest_dir.join(filename);
+        // debug!("Moving {:?} to {:?}", ctx.path, dest_path);
+        //
+        // fs::rename(&ctx.path, &dest_path).map_err(|e| {
+        //     error!("Move action error: {:?}", e);
+        //     anyhow::anyhow!("Failed to move {:?} to {:?}: {}", ctx.path, dest_path, e)
+        // })?;
+        // info!("moved {:?} to {:?}", ctx.path, dest_path);
         Ok(())
     }
 }
