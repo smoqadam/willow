@@ -14,15 +14,24 @@ pub struct Config {
 pub struct Watcher {
     pub path: String,
     pub recursive: bool,
-    pub actions: Vec<ActionConfig>,
+    pub rules: Vec<Rule>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Rule {
     pub conditions: Vec<ConditionConfig>,
+    pub actions: Vec<ActionConfig>,
 }
 
 pub struct RuntimeWatcher {
     pub path: String,
     pub recursive: bool,
-    pub actions: Vec<Box<dyn Action>>,
+    pub rules: Vec<RuntimeRule>,
+}
+
+pub struct RuntimeRule {
     pub conditions: Vec<Box<dyn Condition>>,
+    pub actions: Vec<Box<dyn Action>>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]

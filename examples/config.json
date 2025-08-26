@@ -3,48 +3,51 @@
     {
       "path": "/Users/saeed/watcher",
       "recursive": true,
-      "conditions": [
+      "rules": [
         {
-          "type": "event",
-          "value": "created"
+          "conditions": [
+            {"type": "event", "value": "created"},
+            {"type": "extension", "value": "jpg"}
+          ],
+          "actions": [
+            {"type": "move", "destination": "/Users/saeed/Pictures/"}
+          ]
         },
         {
-          "type": "glob",
-          "value": "*.jpg"
-        }
-      ],
-      "actions": [
-        {
-          "type": "move",
-          "destination": "/Users/saeed/Pictures"
+          "conditions": [
+            {"type": "event", "value": "created"},
+            {"type": "extension", "value": "pdf"}
+          ],
+          "actions": [
+            {"type": "move", "destination": "/Users/saeed/Documents/PDFs/"}
+          ]
         }
       ]
     },
     {
       "path": "/Users/saeed/Downloads",
       "recursive": false,
-      "conditions": [
+      "rules": [
         {
-          "type": "event",
-          "value": "modified"
+          "conditions": [
+            {"type": "event", "value": "modified"},
+            {"type": "extension", "value": "txt"},
+            {"type": "contains", "value": "test"}
+          ],
+          "actions": [
+            {"type": "rename", "template": "{name}_{date}.{ext}"},
+            {"type": "log", "message": "Test file modified: {filename} at {datetime}"}
+          ]
         },
         {
-          "type": "glob",
-          "value": "*.txt"
-        },
-        {
-          "type": "contains",
-          "value": "test"
-        }
-      ],
-      "actions": [
-        {
-          "type": "rename",
-          "template": "{name}_{date}.{ext}"
-        },
-        {
-          "type": "log",
-          "message": "file modified: {file}"
+          "conditions": [
+            {"type": "event", "value": "created"},
+            {"type": "extension", "value": "zip"}
+          ],
+          "actions": [
+            {"type": "log", "message": "New archive created: {filename}"},
+            {"type": "move", "destination": "/Users/saeed/Archives/{date}/"}
+          ]
         }
       ]
     }
