@@ -5,7 +5,6 @@ mod models;
 mod watcher;
 mod engine;
 mod action;
-mod condition;
 mod conditions;
 
 use std::thread;

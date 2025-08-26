@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
 use serde_derive::Deserialize;
-use crate::models::{Event, EventInfo};
-
-
+use crate::models::Event;
+use crate::conditions::{
+    Condition, EventCondition, RegexCondition, GlobCondition, 
+    ExtensionCondition, SizeGtCondition, SizeLtCondition, ContainsCondition
+};
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
-pub enum Condition {
+pub enum ConditionConfig {
     Event { value: Event },
     Regex { value: String },
     Glob { value: String },
@@ -17,4 +17,17 @@ pub enum Condition {
     Contains { value: String },
 }
 
+impl ConditionConfig {
+    pub fn into_condition(self) -> anyhow::Result<Box<dyn Condition>> {
+        match self {
+            ConditionConfig::Event { value } => Ok(Box::new(EventCondition::new(value))),
+            ConditionConfig::Regex { value } => Ok(Box::new(RegexCondition::new(value)?)),
+            ConditionConfig::Glob { value } => Ok(Box::new(GlobCondition::new(value)?)),
+            ConditionConfig::Extension { value } => Ok(Box::new(ExtensionCondition::new(value))),
+            ConditionConfig::SizeGt { value } => Ok(Box::new(SizeGtCondition::new(value))),
+            ConditionConfig::SizeLt { value } => Ok(Box::new(SizeLtCondition::new(value))),
+            ConditionConfig::Contains { value } => Ok(Box::new(ContainsCondition::new(value))),
+        }
+    }
+}
 

@@ -1,7 +1,6 @@
+use crate::condition::ConditionConfig;
 use serde_derive::Deserialize;
 use std::path::PathBuf;
-use notify::EventKind;
-use crate::condition::Condition;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -13,7 +12,7 @@ pub struct Watcher {
     pub path: String,
     pub recursive: bool,
     pub actions: Vec<Action>,
-    pub conditions: Vec<Condition>,
+    pub conditions: Vec<ConditionConfig>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]

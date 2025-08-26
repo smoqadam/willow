@@ -2,10 +2,19 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode};
-use crate::models::{Event, EventInfo, Watcher};
+use crate::models::{Action, Event, EventInfo};
 use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
+use crate::conditions::Condition;
 
-impl Watcher {
+pub struct RuntimeWatcher {
+    pub path: String,
+    pub recursive: bool,
+    pub actions: Vec<Action>,
+    pub conditions: Vec<Box<dyn Condition>>,
+}
+
+
+impl RuntimeWatcher {
     pub fn watch(&self) -> anyhow::Result<(mpsc::Receiver<EventInfo>, Debouncer<RecommendedWatcher, FileIdMap>)> {
         let (rx, rs) = mpsc::channel();
         let mut debouncer = new_debouncer(
