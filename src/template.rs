@@ -1,5 +1,4 @@
-
-use crate::models::EventInfo;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct Template {
@@ -11,8 +10,7 @@ impl Template {
         Template { value }
     }
     
-    pub fn render(&self, event_info: &EventInfo) -> String {
-        let path = &event_info.path;
+    pub fn render(&self, path: &PathBuf) -> String {
         let filename = path.file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("");

@@ -1,8 +1,7 @@
 use crate::actions::Action;
-use crate::models::EventInfo;
 use crate::template::Template;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use log::{debug, error, info};
 
 pub struct MoveAction {
@@ -16,27 +15,25 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn run(&self, event_info: &EventInfo) -> anyhow::Result<()> {
-        debug!("Starting move action for path: {:?}", event_info.path);
-        debug!("Starting move action for event: {:?}", event_info.event);
-        
+    fn run(&self, path: &PathBuf) -> anyhow::Result<()> {
+        debug!("Starting move action for path: {:?}", path);
+
         let template = Template::new(self.destination.clone());
-        let rendered_destination = template.render(event_info);
+        let rendered_destination = template.render(path);
         
         let dest_path = Path::new(&rendered_destination);
         
         // append the filename if the rendered destination is a directory
         let final_dest_path = if rendered_destination.ends_with('/') || rendered_destination.ends_with('\\') {
-            let filename = event_info
-                .path
+            let filename = path
                 .file_name()
-                .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", event_info.path))?;
+                .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", path))?;
             dest_path.join(filename)
         } else {
             dest_path.to_path_buf()
         };
         
-        debug!("Moving {:?} to {:?}", event_info.path, final_dest_path);
+        debug!("Moving {:?} to {:?}", path, final_dest_path);
 
         // create parent directory if it doesn't exist
         if let Some(parent) = final_dest_path.parent() {
@@ -44,11 +41,11 @@ impl Action for MoveAction {
         }
 
         // todo: check for overwrite
-        fs::rename(&event_info.path, &final_dest_path).map_err(|e| {
+        fs::rename(&path, &final_dest_path).map_err(|e| {
             error!("Move action error: {:?}", e);
-            anyhow::anyhow!("Failed to move {:?} to {:?}: {}", event_info.path, final_dest_path, e)
+            anyhow::anyhow!("Failed to move {:?} to {:?}: {}", path, final_dest_path, e)
         })?;
-        info!("moved {:?} to {:?}", event_info.path, final_dest_path);
+        info!("moved {:?} to {:?}", path, final_dest_path);
         Ok(())
     }
 }

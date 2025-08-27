@@ -4,6 +4,7 @@ use crate::conditions::Condition;
 use crate::actions::Action;
 use serde_derive::Deserialize;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -20,17 +21,17 @@ pub struct Watcher {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Rule {
-    pub event: Event,
     pub conditions: Vec<ConditionConfig>,
     pub actions: Vec<ActionConfig>,
 }
 
 pub struct RuntimeWatcher {
-    pub path: String,
+    pub path: PathBuf,
     pub recursive: bool,
     pub ignore: Option<Vec<String>>,
-    pub rules: Vec<RuntimeRule>,
+    pub rules: Vec<Arc<RuntimeRule>>,
 }
+
 
 pub struct RuntimeRule {
     pub conditions: Vec<Box<dyn Condition>>,

@@ -1,5 +1,5 @@
+use std::path::PathBuf;
 use crate::conditions::Condition;
-use crate::models::EventInfo;
 
 pub struct ExtensionCondition {
     extension: String,
@@ -12,8 +12,8 @@ impl ExtensionCondition {
 }
 
 impl Condition for ExtensionCondition {
-    fn matches(&self, event_info: &EventInfo) -> bool {
-        if let Some(ext) = event_info.path.extension() {
+    fn matches(&self, path: &PathBuf) -> bool {
+        if let Some(ext) = path.extension() {
             if let Some(ext_str) = ext.to_str() {
                 return ext_str == self.extension;
             }

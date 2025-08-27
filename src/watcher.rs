@@ -1,18 +1,16 @@
 use std::collections::HashSet;
-use std::ffi::OsStr;
 use std::path::PathBuf;
-use std::sync::{mpsc, Arc};
+use std::sync::mpsc;
 use std::time::Duration;
 use log::debug;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode};
 use crate::models::{Event, EventInfo, RuntimeWatcher};
 use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
 
-
 impl RuntimeWatcher {
     pub fn watch(&self) -> anyhow::Result<(mpsc::Receiver<EventInfo>, Debouncer<RecommendedWatcher, FileIdMap>)> {
-        let (rx, rs) = mpsc::channel();
-        let ignore_set: Arc<HashSet<String>> = Arc::new(
+        let (tx, rx) = mpsc::channel();
+        let ignore_set: std::sync::Arc<HashSet<String>> = std::sync::Arc::new(
             self.ignore
                 .as_deref()
                 .unwrap_or(&[])
@@ -40,7 +38,7 @@ impl RuntimeWatcher {
                         return;
                     }
 
-                    rx.send(EventInfo {
+                    tx.send(EventInfo {
                         path: PathBuf::from(first_path),
                         event: match last_event.kind {
                             EventKind::Create(_) => Event::Created,
@@ -52,6 +50,7 @@ impl RuntimeWatcher {
                 };
             }
         )?;
+        
         let recursive = if self.recursive {
             RecursiveMode::Recursive
         } else {
@@ -59,6 +58,6 @@ impl RuntimeWatcher {
         };
 
         debouncer.watch(&self.path, recursive)?;
-        Ok((rs, debouncer))
+        Ok((rx, debouncer))
     }
 }

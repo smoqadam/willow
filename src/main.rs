@@ -36,5 +36,4 @@ fn main() -> Result<()> {
     loop {
         thread::park();
     }
-    Ok(())
 }

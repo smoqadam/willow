@@ -1,4 +1,4 @@
-use crate::models::EventInfo;
+use std::path::PathBuf;
 
 mod move_action;
 mod rename;
@@ -9,5 +9,5 @@ pub use rename::RenameAction;
 pub use log::LogAction;
 
 pub trait Action: Send + Sync {
-    fn run(&self, event_info: &EventInfo) -> anyhow::Result<()>;
+    fn run(&self, path: &PathBuf) -> anyhow::Result<()>;
 }
