@@ -1,22 +1,22 @@
 watchers:
-#  - path: "/Users/saeed/watcher"
-#    recursive: true
-#    ignore: ["part", "crdownload"]
-#    rules:
-#      - event: "created"
-#        conditions:
-#          - type: "extension"
-#            value: "jpg"
-#        actions:
-#          - type: "move"
-#            destination: "/Users/saeed/Pictures/"
-#      - event: "created"
-#        conditions:
-#          - type: "extension"
-#            value: "pdf"
-#        actions:
-#          - type: "move"
-#            destination: "/Users/saeed/Documents/PDFs/"
+  - path: "/Users/saeed/watcher"
+    recursive: true
+    ignore: ["part", "crdownload"]
+    rules:
+      - event: "created"
+        conditions:
+          - type: "extension"
+            value: "jpg"
+        actions:
+          - type: "move"
+            destination: "/Users/saeed/Pictures/"
+      - event: "created"
+        conditions:
+          - type: "extension"
+            value: "pdf"
+        actions:
+          - type: "move"
+            destination: "/Users/saeed/Documents/PDFs/"
   - path: "/Users/saeed/Downloads"
     recursive: false
     rules:
