@@ -14,6 +14,7 @@ pub struct Config {
 pub struct Watcher {
     pub path: String,
     pub recursive: bool,
+    pub ignore: Option<Vec<String>>,
     pub rules: Vec<Rule>,
 }
 
@@ -27,6 +28,7 @@ pub struct Rule {
 pub struct RuntimeWatcher {
     pub path: String,
     pub recursive: bool,
+    pub ignore: Option<Vec<String>>,
     pub rules: Vec<RuntimeRule>,
 }
 

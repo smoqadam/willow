@@ -1,6 +1,7 @@
 watchers:
   - path: "/Users/saeed/watcher"
     recursive: true
+    ignore: ["part", "crdownload"]
     rules:
       - event: "created"
         conditions:

@@ -32,6 +32,7 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
         let runtime_watcher = RuntimeWatcher {
             path: watcher_config.path.clone(),
             recursive: watcher_config.recursive,
+            ignore: watcher_config.ignore.clone(),
             rules: runtime_rules,
         };
 
