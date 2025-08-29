@@ -1,7 +1,7 @@
 use crate::actions::Action;
 use crate::template::Template;
-use std::fs;
-use std::path::PathBuf;
+use crate::engine::EngineCtx;
+use std::path::Path;
 use log::{debug, info};
 
 pub struct RenameAction {
@@ -15,7 +15,7 @@ impl RenameAction {
 }
 
 impl Action for RenameAction {
-    fn run(&self, path: &PathBuf) -> anyhow::Result<()> {
+    fn run(&self, path: &Path, ctx: &EngineCtx) -> anyhow::Result<()> {
         debug!("Starting rename action for path: {:?} with template: {}", path, self.template);
         
         let template = Template::new(self.template.clone());
@@ -26,7 +26,7 @@ impl Action for RenameAction {
         let new_path = parent_dir.join(&rendered_name);
         
         info!("Renaming {:?} to {:?}", path, new_path);
-        fs::rename(&path, &new_path)?;
+        ctx.fs.rename(path, &new_path)?;
         Ok(())
     }
 }

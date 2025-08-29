@@ -7,6 +7,7 @@ mod engine;
 mod action;
 mod conditions;
 mod template;
+mod fs;
 
 use std::thread;
 use anyhow::Result;

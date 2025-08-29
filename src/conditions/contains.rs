@@ -1,6 +1,6 @@
 use crate::conditions::Condition;
-use std::fs;
-use std::path::PathBuf;
+use crate::engine::EngineCtx;
+use crate::models::EventInfo;
 
 pub struct ContainsCondition {
     text: String,
@@ -13,8 +13,8 @@ impl ContainsCondition {
 }
 
 impl Condition for ContainsCondition {
-    fn matches(&self, path: &PathBuf) -> bool {
-        if let Ok(content) = fs::read_to_string(&path) {
+    fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
+        if let Ok(content) = ctx.fs.read_to_string(&ev.path) {
             return content.contains(&self.text);
         }
         false

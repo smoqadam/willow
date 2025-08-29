@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::path::Path;
+use crate::engine::EngineCtx;
 
 mod move_action;
 mod rename;
@@ -9,5 +10,5 @@ pub use rename::RenameAction;
 pub use log::LogAction;
 
 pub trait Action: Send + Sync {
-    fn run(&self, path: &PathBuf) -> anyhow::Result<()>;
+    fn run(&self, path: &Path, ctx: &EngineCtx) -> anyhow::Result<()>;
 }

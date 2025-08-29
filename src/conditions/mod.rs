@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use crate::engine::EngineCtx;
+use crate::models::EventInfo;
 
 mod regex;
 mod glob;
@@ -13,6 +14,5 @@ pub use size::{SizeGtCondition, SizeLtCondition};
 pub use contains::ContainsCondition;
 
 pub trait Condition: Send + Sync {
-    fn matches(&self, path: &PathBuf) -> bool;
+    fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool;
 }
-

@@ -1,7 +1,7 @@
-use crate::engine::pipeline::Stage;
+use crate::engine::pipeline::{Stage, PipelineMsg};
+use crate::engine::EngineCtx;
 use crate::models::{EventInfo, RuntimeRule, Event};
 use std::collections::{HashMap, HashSet};
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc::{Receiver, Sender}, Arc};
 use std::time::{Duration, Instant, SystemTime};
@@ -174,7 +174,7 @@ impl StabilityStage {
         }
     }
 
-    fn has_sibling_artifacts(&self, basename: &str) -> bool {
+    fn has_sibling_artifacts(&self, basename: &str, ctx: &EngineCtx) -> bool {
         // Check sibling map first
         if let Some(siblings) = self.sibling_map.get(basename) {
             if !siblings.is_empty() {
@@ -191,7 +191,7 @@ impl StabilityStage {
             // Only check a reasonable number of extensions to prevent DoS
             for ext in self.temp_extensions.iter().take(10) {
                 let temp_path = parent.join(format!("{}.{}", basename, ext));
-                if temp_path.exists() {
+                if ctx.fs.exists(&temp_path) {
                     debug!("Found temp artifact on filesystem: {:?}", temp_path);
                     return true;
                 }
@@ -200,7 +200,7 @@ impl StabilityStage {
         false
     }
 
-    fn check_stability(&mut self, tx: &Sender<(EventInfo, Vec<Arc<RuntimeRule>>)>) {
+    fn check_stability(&mut self, ctx: &EngineCtx, tx: &Sender<PipelineMsg>) {
         let now = Instant::now();
         let mut to_emit = Vec::new();
         let mut to_remove = Vec::new();
@@ -213,7 +213,7 @@ impl StabilityStage {
             .collect();
 
         for basename in basenames {
-            if self.has_sibling_artifacts(&basename) {
+            if self.has_sibling_artifacts(&basename, ctx) {
                 files_with_siblings.insert(basename);
             }
         }
@@ -242,7 +242,7 @@ impl StabilityStage {
             }
 
             // Safe metadata access with error handling
-            match fs::metadata(&file.path) {
+            match ctx.fs.metadata(&file.path) {
                 Ok(meta) => {
                     let size = meta.len();
                     let mtime = meta.modified().ok();
@@ -270,13 +270,13 @@ impl StabilityStage {
 
                     if stable_enough && not_zero_created && event_condition {
                         info!("File is stable: {:?}", file.path);
-                        to_emit.push((
-                            EventInfo {
+                        to_emit.push(PipelineMsg {
+                            event: EventInfo {
                                 path: file.path.clone(),
                                 event: file.orig_kind.clone(),
                             },
-                            file.rules.clone(),
-                        ));
+                            rules: file.rules.clone(),
+                        });
                         to_remove.push(file.path.clone());
                         cleared_basenames.insert(file.basename.clone());
                     }
@@ -290,9 +290,9 @@ impl StabilityStage {
         }
 
         // Emit events
-        for (info, rules) in to_emit {
-            info!("Emitting stable event: {:?}", info);
-            if tx.send((info, rules)).is_err() {
+        for msg in to_emit {
+            info!("Emitting stable event: {:?}", msg.event);
+            if tx.send(msg).is_err() {
                 debug!("Channel closed during emit, stopping");
                 break;
             }
@@ -315,8 +315,9 @@ impl StabilityStage {
 impl Stage for StabilityStage {
     fn run(
         &mut self,
-        rx: Receiver<(EventInfo, Vec<Arc<RuntimeRule>>)>,
-        tx: Sender<(EventInfo, Vec<Arc<RuntimeRule>>)>,
+        ctx: Arc<EngineCtx>,
+        rx: Receiver<PipelineMsg>,
+        tx: Sender<PipelineMsg>,
     ) {
         let mut last_check = Instant::now();
         let check_interval = Duration::from_secs(1);
@@ -326,8 +327,8 @@ impl Stage for StabilityStage {
         loop {
             // Process incoming events with timeout
             match rx.recv_timeout(Duration::from_millis(100)) {
-                Ok((ev, rules)) => {
-                    self.add_event(ev, rules);
+                Ok(msg) => {
+                    self.add_event(msg.event, msg.rules);
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     // Timeout is expected, continue to stability check
@@ -340,7 +341,7 @@ impl Stage for StabilityStage {
 
             // Periodically check for stable files
             if last_check.elapsed() >= check_interval {
-                self.check_stability(&tx);
+                self.check_stability(&ctx, &tx);
                 self.cleanup_old_entries();
                 last_check = Instant::now();
             }

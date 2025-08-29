@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::path::Path;
 use crate::actions::Action;
 use crate::template::Template;
+use crate::engine::EngineCtx;
 use log::{debug, info};
 
 pub struct LogAction {
@@ -14,7 +15,7 @@ impl LogAction {
 }
 
 impl Action for LogAction {
-    fn run(&self, path: &PathBuf) -> anyhow::Result<()> {
+    fn run(&self, path: &Path, _ctx: &EngineCtx) -> anyhow::Result<()> {
         debug!("Starting log action for path: {:?}", path);
         
         let template = Template::new(self.message.clone());

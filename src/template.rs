@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Template {
@@ -10,7 +10,7 @@ impl Template {
         Template { value }
     }
     
-    pub fn render(&self, path: &PathBuf) -> String {
+    pub fn render(&self, path: &Path) -> String {
         let filename = path.file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("");

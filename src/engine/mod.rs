@@ -2,40 +2,52 @@ mod pipeline;
 mod condition_stage;
 mod stability_stage;
 mod action_sink;
+mod context;
 
-pub use pipeline::{Stage, Sink};
+pub use pipeline::{Stage, Sink, PipelineMsg};
 pub use condition_stage::ConditionStage;
 pub use stability_stage::StabilityStage;
 pub use action_sink::ActionSink;
+pub use context::EngineCtx;
 
 use crate::models::{Config, RuntimeWatcher, RuntimeRule};
+use crate::fs::{Fs, StdFs};
 use std::sync::{mpsc, Arc};
 use std::thread;
-use log::{debug};
+use log::debug;
 
 pub fn start(config: &Config) -> anyhow::Result<()> {
+    let ctx = Arc::new(EngineCtx::new(Arc::new(StdFs::new()) as Arc<dyn Fs>));
     // Channels between pipeline stages
-    let (cond_tx, cond_rx) = mpsc::channel();
-    let (stab_tx, stab_rx) = mpsc::channel();
-    let (act_tx, act_rx) = mpsc::channel();
+    let (cond_tx, cond_rx) = mpsc::channel::<PipelineMsg>();
+    let (stab_tx, stab_rx) = mpsc::channel::<PipelineMsg>();
+    let (act_tx, act_rx) = mpsc::channel::<PipelineMsg>();
 
     // Create and spawn pipeline stages
     let mut condition_stage = ConditionStage::new();
     let mut stability_stage = StabilityStage::new();
     let mut action_sink = ActionSink::new();
 
-    // Spawn stage threads
-    thread::spawn(move || {
-        condition_stage.run(cond_rx, stab_tx);
-    });
+    {
+        let ctx = ctx.clone();
+        thread::spawn(move || {
+            condition_stage.run(ctx, cond_rx, stab_tx);
+        });
+    }
 
-    thread::spawn(move || {
-        stability_stage.run(stab_rx, act_tx);
-    });
+    {
+        let ctx = ctx.clone();
+        thread::spawn(move || {
+            stability_stage.run(ctx, stab_rx, act_tx);
+        });
+    }
 
-    thread::spawn(move || {
-        action_sink.run(act_rx);
-    });
+    {
+        let ctx = ctx.clone();
+        thread::spawn(move || {
+            action_sink.run(ctx, act_rx);
+        });
+    }
 
     // For each watcher, just forward events + rules into the pipeline
     for watcher_config in &config.watchers {
@@ -76,7 +88,7 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
             while let Ok(ev) = rx.recv() {
                 debug!("raw event {:?}", ev);
                 // pass event + relevant rules into the pipeline
-                if cond_tx_clone.send((ev, runtime_watcher.rules.clone())).is_err() {
+                if cond_tx_clone.send(PipelineMsg { event: ev, rules: runtime_watcher.rules.clone() }).is_err() {
                     break; // Channel closed, exit gracefully
                 }
             }

@@ -1,7 +1,7 @@
 use crate::actions::Action;
 use crate::template::Template;
-use std::fs;
-use std::path::{Path, PathBuf};
+use crate::engine::EngineCtx;
+use std::path::Path;
 use log::{debug, error, info};
 
 pub struct MoveAction {
@@ -15,7 +15,7 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn run(&self, path: &PathBuf) -> anyhow::Result<()> {
+    fn run(&self, path: &Path, ctx: &EngineCtx) -> anyhow::Result<()> {
         debug!("Starting move action for path: {:?}", path);
 
         let template = Template::new(self.destination.clone());
@@ -37,11 +37,11 @@ impl Action for MoveAction {
 
         // create parent directory if it doesn't exist
         if let Some(parent) = final_dest_path.parent() {
-            fs::create_dir_all(parent)?;
+            ctx.fs.create_dir_all(parent)?;
         }
 
         // todo: check for overwrite
-        fs::rename(&path, &final_dest_path).map_err(|e| {
+        ctx.fs.rename(path, &final_dest_path).map_err(|e| {
             error!("Move action error: {:?}", e);
             anyhow::anyhow!("Failed to move {:?} to {:?}: {}", path, final_dest_path, e)
         })?;

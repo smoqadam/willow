@@ -1,6 +1,6 @@
 use crate::conditions::Condition;
-use std::fs;
-use std::path::PathBuf;
+use crate::engine::EngineCtx;
+use crate::models::EventInfo;
 
 pub struct SizeGtCondition {
     size: i64,
@@ -13,8 +13,8 @@ impl SizeGtCondition {
 }
 
 impl Condition for SizeGtCondition {
-    fn matches(&self, path: &PathBuf) -> bool {
-        if let Ok(metadata) = fs::metadata(&path) {
+    fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
+        if let Ok(metadata) = ctx.fs.metadata(&ev.path) {
             return metadata.len() as i64 > self.size;
         }
         false
@@ -32,8 +32,8 @@ impl SizeLtCondition {
 }
 
 impl Condition for SizeLtCondition {
-    fn matches(&self, path: &PathBuf) -> bool {
-        if let Ok(metadata) = fs::metadata(&path) {
+    fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
+        if let Ok(metadata) = ctx.fs.metadata(&ev.path) {
             return (metadata.len() as i64) < self.size;
         }
         false
