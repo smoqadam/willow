@@ -10,7 +10,7 @@ watchers:
         actions:
           - type: "move"
             destination: "/Users/saeed/Pictures/"
-      - event: "created"
+      - event: "modified"
         conditions:
           - type: "extension"
             value: "pdf"
