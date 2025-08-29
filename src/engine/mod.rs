@@ -11,7 +11,7 @@ pub use action_sink::ActionSink;
 use crate::models::{Config, RuntimeWatcher, RuntimeRule};
 use std::sync::{mpsc, Arc};
 use std::thread;
-use log::info;
+use log::{debug};
 
 pub fn start(config: &Config) -> anyhow::Result<()> {
     // Channels between pipeline stages
@@ -56,6 +56,7 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
             }
 
             runtime_rules.push(Arc::new(RuntimeRule {
+                event: rule.event.clone(),
                 conditions,
                 actions,
             }));
@@ -73,7 +74,7 @@ pub fn start(config: &Config) -> anyhow::Result<()> {
         thread::spawn(move || {
             let (rx, _debouncer) = runtime_watcher.watch().expect("failed to start watcher");
             while let Ok(ev) = rx.recv() {
-                info!("raw event {:?}", ev);
+                debug!("raw event {:?}", ev);
                 // pass event + relevant rules into the pipeline
                 if cond_tx_clone.send((ev, runtime_watcher.rules.clone())).is_err() {
                     break; // Channel closed, exit gracefully

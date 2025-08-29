@@ -21,6 +21,7 @@ pub struct Watcher {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Rule {
+    pub event: Event,
     pub conditions: Vec<ConditionConfig>,
     pub actions: Vec<ActionConfig>,
 }
@@ -34,16 +35,18 @@ pub struct RuntimeWatcher {
 
 
 pub struct RuntimeRule {
+    pub event: Event,
     pub conditions: Vec<Box<dyn Condition>>,
     pub actions: Vec<Box<dyn Action>>,
 }
 
-#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[derive(Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Event {
     Created,
     Modified,
     Deleted,
+    Any,
     Unsupported,
 }
 

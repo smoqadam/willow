@@ -5,7 +5,7 @@ use std::time::Duration;
 use log::debug;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode};
 use crate::models::{Event, EventInfo, RuntimeWatcher};
-use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
+use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, FileIdMap};
 
 impl RuntimeWatcher {
     pub fn watch(&self) -> anyhow::Result<(mpsc::Receiver<EventInfo>, Debouncer<RecommendedWatcher, FileIdMap>)> {
@@ -19,13 +19,20 @@ impl RuntimeWatcher {
                 .collect::<HashSet<_>>()
         );
 
+        // Pre-compute which event kinds this watcher cares about based on its rules
+        let allowed_events: HashSet<Event> = self
+            .rules
+            .iter()
+            .map(|r| r.event.clone())
+            .collect();
+        
         let mut debouncer = new_debouncer(
             Duration::from_millis(100),
             None,
             move |event_result: DebounceEventResult| {
                 if let Ok(res) = event_result {
-                    let last_event = &res[res.len() - 1];
-                    let first_path = &last_event.paths[0];
+                    let Some(last_event) = res.last() else { return; };
+                    let Some(first_path) = last_event.paths.get(0) else { return; };
 
                     let ext = first_path
                         .extension()
@@ -38,15 +45,33 @@ impl RuntimeWatcher {
                         return;
                     }
 
-                    tx.send(EventInfo {
+                    let mapped_event = match last_event.kind {
+                        EventKind::Create(_) => Event::Created,
+                        EventKind::Modify(_) => Event::Modified,
+                        EventKind::Remove(_) => Event::Deleted,
+                        _ => return,
+                    };
+
+                    // Early event filtering: drop if no rule matches this event
+                    if !allowed_events.is_empty()
+                        && !allowed_events.contains(&Event::Any)
+                        && !allowed_events.contains(&mapped_event)
+                    {
+                        debug!(
+                            "event ignored for {:?}. reason: unmatched event: {:?}",
+                            first_path,
+                            mapped_event
+                        );
+                        return;
+                    }
+
+                    if let Err(e) = tx.send(EventInfo {
                         path: PathBuf::from(first_path),
-                        event: match last_event.kind {
-                            EventKind::Create(_) => Event::Created,
-                            EventKind::Modify(_) => Event::Modified,
-                            EventKind::Remove(_) => Event::Deleted,
-                            _ => return,
-                        },
-                    }).unwrap();
+                        event: mapped_event,
+                    }) {
+                        debug!("watcher channel closed while sending event: {:?}", e);
+                        return;
+                    }
                 };
             }
         )?;
