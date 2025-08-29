@@ -32,34 +32,24 @@ Willow watches specified directories for file system events (created, modified, 
 watchers:
   - path: "/Users/username/Downloads"
     recursive: true
-    ignore: ["part", "crdownload"]
     rules:
-      # Organize images
-      - conditions:
+      - event: "created"
+        conditions:
           - type: "extension"
             value: "jpg"
         actions:
           - type: "move"
             destination: "/Users/username/Pictures/"
-      
-      # Organize PDFs with logging
-      - conditions:
+      - event: "modified"
+        conditions:
           - type: "extension"
             value: "pdf"
         actions:
           - type: "move"
             destination: "/Users/username/Documents/PDFs/"
-          - type: "log"
-            message: "Moved PDF: {filename}"
-      
-      # Rename files with timestamp
-      - conditions:
-          - type: "glob"
-            value: "screenshot*"
-        actions:
-          - type: "rename"
-            template: "screenshot_{date}_{time}.{ext}"
 ```
+
+This config moves `jpg` files to `"/Users/username/Pictures/"` when they are created, also moves `pdf`s to `Users/username/Documents/PDFs` on modify event.
 
 ### Configuration Options
 

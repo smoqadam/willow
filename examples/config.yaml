@@ -1,7 +1,6 @@
 watchers:
-  - path: "/Users/saeed/watcher"
+  - path: "/Users/username/Downloads"
     recursive: true
-    ignore: ["part", "crdownload"]
     rules:
       - event: "created"
         conditions:
@@ -9,23 +8,11 @@ watchers:
             value: "jpg"
         actions:
           - type: "move"
-            destination: "/Users/saeed/Pictures/"
+            destination: "/Users/username/Pictures/"
       - event: "modified"
         conditions:
           - type: "extension"
             value: "pdf"
         actions:
           - type: "move"
-            destination: "/Users/saeed/Documents/PDFs/"
-  - path: "/Users/saeed/Downloads"
-    recursive: false
-    rules:
-      - event: "created"
-        conditions:
-          - type: "glob"
-            value: "*.*"
-        actions:
-          - type: "move"
-            destination: "/Users/saeed/watcher/{name}_{date}.{ext}"
-          - type: "log"
-            message: "Test file created: {filename} at {datetime}"
+            destination: "/Users/username/Documents/PDFs/"
