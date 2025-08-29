@@ -33,8 +33,10 @@ fn main() -> Result<()> {
     let config = config::load(cli.config)?;
     debug!("Parsed CLI arguments: {:?}", config);
 
-    engine::start(&config)?;
-    loop {
-        thread::park();
-    }
+    let handle = engine::start(&config)?;
+    let (tx, rx) = std::sync::mpsc::channel::<()>();
+    ctrlc::set_handler(move || { let _ = tx.send(()); }).expect("ctrlc");
+    let _ = rx.recv();
+    handle.shutdown();
+    Ok(())
 }
