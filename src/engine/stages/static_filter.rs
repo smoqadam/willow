@@ -4,13 +4,13 @@ use std::sync::Arc;
 use log::info;
 use crate::engine::EngineCtx;
 
-pub struct ConditionStage;
+pub struct StaticFilterStage;
 
-impl ConditionStage {
+impl StaticFilterStage {
     pub fn new() -> Self { Self }
 }
 
-impl Stage for ConditionStage {
+impl Stage for StaticFilterStage {
     fn run(
         &mut self,
         ctx: Arc<EngineCtx>,
@@ -20,15 +20,10 @@ impl Stage for ConditionStage {
         while let Ok(msg) = rx.recv() {
             let ev = &msg.event;
             let matching: Vec<_> = msg.rules.into_iter()
-                .filter(|r| r.conditions.iter().all(|c| c.matches(ev, &ctx)))
+                .filter(|r| r.conditions.iter().filter(|c| matches!(c.kind(), crate::conditions::ConditionKind::Io)).all(|c| c.matches(ev, &ctx)))
                 .collect();
-
-            if !matching.is_empty() {
-                info!("conditions matched for {:?}: {} rules", ev.path, matching.len());
-                if tx.send(PipelineMsg { event: ev.clone(), rules: matching }).is_err() {
-                    break; // Channel closed, exit gracefully
-                }
-            }
+            if matching.is_empty() { continue; }
+            if tx.send(PipelineMsg { event: ev.clone(), rules: matching }).is_err() { break; }
         }
     }
 }

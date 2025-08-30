@@ -1,14 +1,9 @@
-mod action_sink;
-mod condition_stage;
 mod context;
 mod pipeline;
-mod stability_stage;
+mod stages;
 
-pub use action_sink::ActionSink;
-pub use condition_stage::ConditionStage;
 pub use context::EngineCtx;
 pub use pipeline::{PipelineMsg, Sink, Stage};
-pub use stability_stage::StabilityStage;
 
 use crate::engine::pipeline::PipelineBuilder;
 use crate::fs::{Fs, StdFs};
@@ -18,6 +13,7 @@ use std::sync::{Arc, mpsc, atomic::{AtomicBool, Ordering}};
 use std::sync::mpsc::Sender;
 use std::thread;
 use std::thread::JoinHandle;
+use crate::engine::stages::{IoFilterStage, StaticFilterStage, StabilityStage, ActionSink};
 
 pub struct EngineHandle {
     stage_handles: Vec<JoinHandle<()>>,
@@ -41,8 +37,13 @@ pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
 
     let builder = PipelineBuilder::new(ctx.clone(), ActionSink::new());
     let (pipeline_tx, stage_handles) = builder
-        .add_stage(ConditionStage::new())
+        // only for static conditions that can be run on path (e.g regex)
+        .add_stage(StaticFilterStage::new())
+        // this stage checks  if the file is stable
         .add_stage(StabilityStage::new())
+        // some conditions (kind::IO) requires to access filesystem therefore they are more expensive
+        // and some times the file need to be stable enough to check its size (e.g. SizeGt conditions)
+        .add_stage(IoFilterStage::new())
         .build();
 
     let watcher_handles = spawn_watcher(&config.watchers, pipeline_tx.clone(), ctx.clone())?;
@@ -89,13 +90,11 @@ fn gather_rules(watcher: &Watcher) -> anyhow::Result<Vec<Arc<RuntimeRule>>> {
     let mut runtime_rules: Vec<Arc<RuntimeRule>> = Vec::new();
 
     for rule in &watcher.rules {
-        // Convert ConditionConfig to trait objects
         let mut conditions: Vec<Box<dyn crate::conditions::Condition>> = Vec::new();
         for condition_config in &rule.conditions {
             conditions.push(condition_config.clone().into_condition()?);
         }
 
-        // Convert ActionConfig to trait objects
         let mut actions: Vec<Box<dyn crate::actions::Action>> = Vec::new();
         for action_config in &rule.actions {
             actions.push(action_config.clone().into_action());

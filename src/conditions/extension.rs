@@ -13,6 +13,7 @@ impl ExtensionCondition {
 }
 
 impl Condition for ExtensionCondition {
+    fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Static }
     fn matches(&self, ev: &EventInfo, _ctx: &EngineCtx) -> bool {
         if let Some(ext) = ev.path.extension() {
             if let Some(ext_str) = ext.to_str() {

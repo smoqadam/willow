@@ -13,6 +13,13 @@ pub use extension::ExtensionCondition;
 pub use size::{SizeGtCondition, SizeLtCondition};
 pub use contains::ContainsCondition;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConditionKind {
+    Static,
+    Io,
+}
+
 pub trait Condition: Send + Sync {
+    fn kind(&self) -> ConditionKind;
     fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool;
 }

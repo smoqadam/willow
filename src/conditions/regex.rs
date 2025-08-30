@@ -15,6 +15,7 @@ impl RegexCondition {
 }
 
 impl Condition for RegexCondition {
+    fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Static }
     fn matches(&self, ev: &EventInfo, _ctx: &EngineCtx) -> bool {
         if let Some(filename) = ev.path.file_name() {
             if let Some(filename_str) = filename.to_str() {
