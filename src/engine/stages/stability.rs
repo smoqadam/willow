@@ -1,6 +1,6 @@
 use crate::engine::pipeline::{Stage, PipelineMsg};
 use crate::engine::EngineCtx;
-use crate::models::{EventInfo, RuntimeRule, Event};
+use crate::models::{EventInfo, RuntimeRule, Event, FileMeta};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc::{Receiver, Sender}, Arc};
@@ -79,7 +79,7 @@ impl StabilityStage {
         }
 
         let now = Instant::now();
-        let max_age = Duration::from_secs(3600); // 1 hour max age
+        let max_age = Duration::from_secs(3600); // 1 hour max age todo: make it configurable
 
         let mut to_remove = Vec::new();
 
@@ -260,7 +260,6 @@ impl StabilityStage {
                     file.last_size = Some(size);
                     file.last_mtime = mtime;
 
-                    // Emit conditions with better logic
                     let stable_enough = file.stable_count >= self.stable_required;
                     let not_zero_created = !(size == 0 && matches!(file.orig_kind, Event::Created));
                     let event_condition = match file.orig_kind {
@@ -270,10 +269,18 @@ impl StabilityStage {
 
                     if stable_enough && not_zero_created && event_condition {
                         info!("File is stable: {:?}", file.path);
+                        let name = file.path.file_name().and_then(|s| s.to_str()).map(|s| s.to_string());
+                        let ext = file.path.extension().and_then(|s| s.to_str()).map(|s| s.to_string());
                         to_emit.push(PipelineMsg {
                             event: EventInfo {
                                 path: file.path.clone(),
                                 event: file.orig_kind.clone(),
+                                meta: Some(FileMeta {
+                                    size: file.last_size,
+                                    modified: file.last_mtime,
+                                    name,
+                                    ext,
+                                }),
                             },
                             rules: file.rules.clone(),
                         });

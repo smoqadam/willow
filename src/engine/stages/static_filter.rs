@@ -1,7 +1,6 @@
 use crate::engine::pipeline::{Stage, PipelineMsg};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
-use log::info;
 use crate::engine::EngineCtx;
 
 pub struct StaticFilterStage;
@@ -20,7 +19,8 @@ impl Stage for StaticFilterStage {
         while let Ok(msg) = rx.recv() {
             let ev = &msg.event;
             let matching: Vec<_> = msg.rules.into_iter()
-                .filter(|r| r.conditions.iter().filter(|c| matches!(c.kind(), crate::conditions::ConditionKind::Io)).all(|c| c.matches(ev, &ctx)))
+                .filter(|r| r.event == ev.event || matches!(r.event, crate::models::Event::Any))
+                .filter(|r| r.conditions.iter().filter(|c| matches!(c.kind(), crate::conditions::ConditionKind::Static)).all(|c| c.matches(ev, &ctx)))
                 .collect();
             if matching.is_empty() { continue; }
             if tx.send(PipelineMsg { event: ev.clone(), rules: matching }).is_err() { break; }

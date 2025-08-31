@@ -4,6 +4,7 @@ use crate::conditions::Condition;
 use crate::actions::Action;
 use serde_derive::Deserialize;
 use std::path::PathBuf;
+use std::time::SystemTime;
 use std::sync::Arc;
 
 #[derive(Deserialize, Debug)]
@@ -50,8 +51,17 @@ pub enum Event {
     Unsupported,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct EventInfo {
     pub path: PathBuf,
     pub event: Event,
+    pub meta: Option<FileMeta>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileMeta {
+    pub size: Option<u64>,
+    pub modified: Option<SystemTime>,
+    pub name: Option<String>,
+    pub ext: Option<String>,
 }

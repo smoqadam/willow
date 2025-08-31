@@ -15,10 +15,13 @@ impl SizeGtCondition {
 impl Condition for SizeGtCondition {
     fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Io }
     fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
-        if let Ok(metadata) = ctx.fs.metadata(&ev.path) {
-            return metadata.len() as i64 > self.size;
+        if let Some(sz) = ev.meta.as_ref().and_then(|m| m.size) {
+            return sz as i64 > self.size;
         }
-        false
+        match ctx.fs.metadata(&ev.path) {
+            Ok(md) => (md.len() as i64) > self.size,
+            Err(_) => false,
+        }
     }
 }
 
@@ -35,9 +38,12 @@ impl SizeLtCondition {
 impl Condition for SizeLtCondition {
     fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Io }
     fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
-        if let Ok(metadata) = ctx.fs.metadata(&ev.path) {
-            return (metadata.len() as i64) < self.size;
+        if let Some(sz) = ev.meta.as_ref().and_then(|m| m.size) {
+            return (sz as i64) < self.size;
         }
-        false
+        match ctx.fs.metadata(&ev.path) {
+            Ok(md) => (md.len() as i64) < self.size,
+            Err(_) => false,
+        }
     }
 }

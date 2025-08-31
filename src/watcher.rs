@@ -68,6 +68,7 @@ impl RuntimeWatcher {
                     if let Err(e) = tx.send(EventInfo {
                         path: PathBuf::from(first_path),
                         event: mapped_event,
+                        meta: None,
                     }) {
                         debug!("watcher channel closed while sending event: {:?}", e);
                         return;
