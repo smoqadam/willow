@@ -1,6 +1,6 @@
 use crate::models::Config;
-use std::fs;
 use anyhow::Result;
+use std::fs;
 
 pub fn load(path: String) -> Result<Config> {
     // println!("{:?}", path);
@@ -8,5 +8,5 @@ pub fn load(path: String) -> Result<Config> {
     // println!("{:?}", content);
     let config: Config = serde_yaml::from_str(content.as_str())?;
     // println!("{:?}", config);
-   Ok(config)
+    Ok(config)
 }

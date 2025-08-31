@@ -13,7 +13,9 @@ impl SizeGtCondition {
 }
 
 impl Condition for SizeGtCondition {
-    fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Io }
+    fn kind(&self) -> crate::conditions::ConditionKind {
+        crate::conditions::ConditionKind::Io
+    }
     fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
         if let Some(sz) = ev.meta.as_ref().and_then(|m| m.size) {
             return sz as i64 > self.size;
@@ -36,7 +38,9 @@ impl SizeLtCondition {
 }
 
 impl Condition for SizeLtCondition {
-    fn kind(&self) -> crate::conditions::ConditionKind { crate::conditions::ConditionKind::Io }
+    fn kind(&self) -> crate::conditions::ConditionKind {
+        crate::conditions::ConditionKind::Io
+    }
     fn matches(&self, ev: &EventInfo, ctx: &EngineCtx) -> bool {
         if let Some(sz) = ev.meta.as_ref().and_then(|m| m.size) {
             return (sz as i64) < self.size;

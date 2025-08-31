@@ -1,5 +1,5 @@
+use crate::actions::{Action, LogAction, MoveAction, RenameAction};
 use serde_derive::Deserialize;
-use crate::actions::{Action, MoveAction, RenameAction, LogAction};
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]

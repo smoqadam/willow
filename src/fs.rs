@@ -1,6 +1,6 @@
-use std::{fs, io};
 use std::fs::Metadata;
 use std::path::Path;
+use std::{fs, io};
 
 pub trait Fs: Send + Sync {
     fn metadata(&self, path: &Path) -> io::Result<Metadata>;
@@ -13,7 +13,9 @@ pub trait Fs: Send + Sync {
 pub struct StdFs;
 
 impl StdFs {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 impl Fs for StdFs {

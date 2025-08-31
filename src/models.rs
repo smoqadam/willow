@@ -1,11 +1,11 @@
-use crate::condition::ConditionConfig;
 use crate::action::ActionConfig;
-use crate::conditions::Condition;
 use crate::actions::Action;
+use crate::condition::ConditionConfig;
+use crate::conditions::Condition;
 use serde_derive::Deserialize;
 use std::path::PathBuf;
-use std::time::SystemTime;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -33,7 +33,6 @@ pub struct RuntimeWatcher {
     pub ignore: Option<Vec<String>>,
     pub rules: Vec<Arc<RuntimeRule>>,
 }
-
 
 pub struct RuntimeRule {
     pub event: Event,

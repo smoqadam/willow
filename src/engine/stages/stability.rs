@@ -1,11 +1,14 @@
-use crate::engine::pipeline::{Stage, PipelineMsg};
 use crate::engine::EngineCtx;
-use crate::models::{EventInfo, RuntimeRule, Event, FileMeta};
+use crate::engine::pipeline::{PipelineMsg, Stage};
+use crate::models::{Event, EventInfo, FileMeta, RuntimeRule};
+use log::{debug, info, warn};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::{mpsc::{Receiver, Sender}, Arc};
+use std::sync::{
+    Arc,
+    mpsc::{Receiver, Sender},
+};
 use std::time::{Duration, Instant, SystemTime};
-use log::{debug, info, warn};
 
 struct PendingFile {
     path: PathBuf,
@@ -23,8 +26,8 @@ struct PendingFile {
 pub struct StabilityStage {
     min_quiet: Duration,
     stable_required: u8,
-    max_checks: u16, // Maximum checks before giving up
-    max_pending_files: usize, // Limit pending files to prevent memory exhaustion
+    max_checks: u16,                  // Maximum checks before giving up
+    max_pending_files: usize,         // Limit pending files to prevent memory exhaustion
     temp_extensions: HashSet<String>, // Changed to owned strings
     state: HashMap<PathBuf, PendingFile>,
     sibling_map: HashMap<String, HashSet<PathBuf>>, // basename -> set of temp siblings
@@ -37,7 +40,7 @@ impl StabilityStage {
         Self {
             min_quiet: Duration::from_secs(3),
             stable_required: 2,
-            max_checks: 100, // Prevent infinite checking
+            max_checks: 100,          // Prevent infinite checking
             max_pending_files: 10000, // Prevent memory exhaustion
             temp_extensions: ["part", "crdownload", "download", "tmp", "temp"]
                 .iter()
@@ -84,9 +87,14 @@ impl StabilityStage {
         let mut to_remove = Vec::new();
 
         for (path, file) in &self.state {
-            if now.duration_since(file.last_event) > max_age || file.check_count >= self.max_checks {
-                warn!("Removing stale file from tracking: {:?} (age: {:?}, checks: {})",
-                      path, now.duration_since(file.last_event), file.check_count);
+            if now.duration_since(file.last_event) > max_age || file.check_count >= self.max_checks
+            {
+                warn!(
+                    "Removing stale file from tracking: {:?} (age: {:?}, checks: {})",
+                    path,
+                    now.duration_since(file.last_event),
+                    file.check_count
+                );
                 to_remove.push(path.clone());
             }
         }
@@ -115,8 +123,11 @@ impl StabilityStage {
 
         // Prevent memory exhaustion
         if self.state.len() >= self.max_pending_files {
-            warn!("Too many pending files ({}), dropping event for: {:?}",
-                  self.state.len(), ev.path);
+            warn!(
+                "Too many pending files ({}), dropping event for: {:?}",
+                self.state.len(),
+                ev.path
+            );
             return;
         }
 
@@ -129,7 +140,9 @@ impl StabilityStage {
         };
 
         // Check for temp extensions more safely
-        let is_temp = ev.path.extension()
+        let is_temp = ev
+            .path
+            .extension()
             .and_then(|e| e.to_str())
             .map(|ext| {
                 let ext_lower = ext.to_ascii_lowercase();
@@ -150,7 +163,10 @@ impl StabilityStage {
         let is_modify = matches!(ev.event, Event::Modified);
 
         if let Some(existing) = self.state.get_mut(&ev.path) {
-            debug!("Updating existing file: {:?}, event: {:?}", ev.path, ev.event);
+            debug!(
+                "Updating existing file: {:?}, event: {:?}",
+                ev.path, ev.event
+            );
             existing.last_event = now;
             existing.saw_modified |= is_modify;
             existing.stable_count = 0; // Reset stability count on new event
@@ -183,7 +199,9 @@ impl StabilityStage {
         }
 
         // More efficient filesystem probing - find any file with this basename first
-        let sample_parent = self.state.values()
+        let sample_parent = self
+            .state
+            .values()
             .find(|f| f.basename == basename)
             .and_then(|f| f.path.parent());
 
@@ -208,9 +226,7 @@ impl StabilityStage {
 
         // Pre-compute which files have sibling artifacts to avoid repeated checks
         let mut files_with_siblings = HashSet::new();
-        let basenames: HashSet<String> = self.state.values()
-            .map(|f| f.basename.clone())
-            .collect();
+        let basenames: HashSet<String> = self.state.values().map(|f| f.basename.clone()).collect();
 
         for basename in basenames {
             if self.has_sibling_artifacts(&basename, ctx) {
@@ -229,14 +245,19 @@ impl StabilityStage {
 
             // Skip if temp siblings still present
             if files_with_siblings.contains(&file.basename) {
-                debug!("Skipping {:?}, temp siblings still present for {:?}",
-                       path, file.basename);
+                debug!(
+                    "Skipping {:?}, temp siblings still present for {:?}",
+                    path, file.basename
+                );
                 continue;
             }
 
             // Give up if we've checked too many times
             if file.check_count >= self.max_checks {
-                warn!("Giving up on file after {} checks: {:?}", file.check_count, path);
+                warn!(
+                    "Giving up on file after {} checks: {:?}",
+                    file.check_count, path
+                );
                 to_remove.push(file.path.clone());
                 continue;
             }
@@ -247,8 +268,15 @@ impl StabilityStage {
                     let size = meta.len();
                     let mtime = meta.modified().ok();
 
-                    debug!("Probing {:?}: size={}, stable_count={}, checks={}, orig_kind={:?}, saw_modified={}",
-                           path, size, file.stable_count, file.check_count, file.orig_kind, file.saw_modified);
+                    debug!(
+                        "Probing {:?}: size={}, stable_count={}, checks={}, orig_kind={:?}, saw_modified={}",
+                        path,
+                        size,
+                        file.stable_count,
+                        file.check_count,
+                        file.orig_kind,
+                        file.saw_modified
+                    );
 
                     // Check stability
                     if Some(size) == file.last_size && mtime == file.last_mtime {
@@ -269,8 +297,16 @@ impl StabilityStage {
 
                     if stable_enough && not_zero_created && event_condition {
                         info!("File is stable: {:?}", file.path);
-                        let name = file.path.file_name().and_then(|s| s.to_str()).map(|s| s.to_string());
-                        let ext = file.path.extension().and_then(|s| s.to_str()).map(|s| s.to_string());
+                        let name = file
+                            .path
+                            .file_name()
+                            .and_then(|s| s.to_str())
+                            .map(|s| s.to_string());
+                        let ext = file
+                            .path
+                            .extension()
+                            .and_then(|s| s.to_str())
+                            .map(|s| s.to_string());
                         to_emit.push(PipelineMsg {
                             event: EventInfo {
                                 path: file.path.clone(),
@@ -289,7 +325,10 @@ impl StabilityStage {
                     }
                 }
                 Err(err) => {
-                    debug!("Failed to stat {:?}: {:?} (removing from tracking)", file.path, err);
+                    debug!(
+                        "Failed to stat {:?}: {:?} (removing from tracking)",
+                        file.path, err
+                    );
                     to_remove.push(file.path.clone());
                     cleared_basenames.insert(file.basename.clone());
                 }
@@ -320,12 +359,7 @@ impl StabilityStage {
 }
 
 impl Stage for StabilityStage {
-    fn run(
-        &mut self,
-        ctx: Arc<EngineCtx>,
-        rx: Receiver<PipelineMsg>,
-        tx: Sender<PipelineMsg>,
-    ) {
+    fn run(&mut self, ctx: Arc<EngineCtx>, rx: Receiver<PipelineMsg>, tx: Sender<PipelineMsg>) {
         let mut last_check = Instant::now();
         let check_interval = Duration::from_secs(1);
 

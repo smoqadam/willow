@@ -1,9 +1,12 @@
+use super::context::EngineCtx;
+use crate::engine::ActionSink;
 use crate::models::{EventInfo, RuntimeRule};
-use std::sync::{mpsc, mpsc::{Receiver, Sender}, Arc};
+use std::sync::{
+    Arc, mpsc,
+    mpsc::{Receiver, Sender},
+};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::engine::ActionSink;
-use super::context::EngineCtx;
 
 #[derive(Clone)]
 pub struct PipelineMsg {
@@ -13,19 +16,13 @@ pub struct PipelineMsg {
 
 /// Stage trait for pipeline stages that filter and transform events
 pub trait Stage: Send + Sync {
-    fn run(
-        &mut self,
-        ctx: Arc<EngineCtx>,
-        rx: Receiver<PipelineMsg>,
-        tx: Sender<PipelineMsg>,
-    );
+    fn run(&mut self, ctx: Arc<EngineCtx>, rx: Receiver<PipelineMsg>, tx: Sender<PipelineMsg>);
 }
 
 /// Sink trait for final stages that consume events without forwarding
 pub trait Sink: Send + Sync {
     fn run(&mut self, ctx: Arc<EngineCtx>, rx: Receiver<PipelineMsg>);
 }
-
 
 pub struct PipelineBuilder {
     ctx: Arc<EngineCtx>,
@@ -42,7 +39,7 @@ impl PipelineBuilder {
         }
     }
 
-    pub fn add_stage(mut self, stage: impl Stage + 'static ) -> Self {
+    pub fn add_stage(mut self, stage: impl Stage + 'static) -> Self {
         self.stages.push(Box::new(stage));
         self
     }

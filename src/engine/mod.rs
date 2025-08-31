@@ -6,14 +6,18 @@ pub use context::EngineCtx;
 pub use pipeline::{PipelineMsg, Sink, Stage};
 
 use crate::engine::pipeline::PipelineBuilder;
+use crate::engine::stages::{ActionSink, IoFilterStage, StabilityStage, StaticFilterStage};
 use crate::fs::{Fs, StdFs};
 use crate::models::{Config, RuntimeRule, RuntimeWatcher, Watcher};
 use log::debug;
-use std::sync::{Arc, mpsc, atomic::{AtomicBool, Ordering}};
 use std::sync::mpsc::Sender;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+    mpsc,
+};
 use std::thread;
 use std::thread::JoinHandle;
-use crate::engine::stages::{IoFilterStage, StaticFilterStage, StabilityStage, ActionSink};
 
 pub struct EngineHandle {
     stage_handles: Vec<JoinHandle<()>>,
@@ -26,14 +30,21 @@ impl EngineHandle {
     pub fn shutdown(self) {
         self.shutdown.store(true, Ordering::SeqCst);
         drop(self.ingress);
-        for h in self.watcher_handles { let _ = h.join(); }
-        for h in self.stage_handles { let _ = h.join(); }
+        for h in self.watcher_handles {
+            let _ = h.join();
+        }
+        for h in self.stage_handles {
+            let _ = h.join();
+        }
     }
 }
 
 pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
     let shutdown = Arc::new(AtomicBool::new(false));
-    let ctx = Arc::new(EngineCtx::new(Arc::new(StdFs::new()) as Arc<dyn Fs>, shutdown.clone()));
+    let ctx = Arc::new(EngineCtx::new(
+        Arc::new(StdFs::new()) as Arc<dyn Fs>,
+        shutdown.clone(),
+    ));
 
     let builder = PipelineBuilder::new(ctx.clone(), ActionSink::new());
     let (pipeline_tx, stage_handles) = builder
@@ -47,7 +58,12 @@ pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
         .build();
 
     let watcher_handles = spawn_watcher(&config.watchers, pipeline_tx.clone(), ctx.clone())?;
-    Ok(EngineHandle { stage_handles, watcher_handles, ingress: pipeline_tx, shutdown })
+    Ok(EngineHandle {
+        stage_handles,
+        watcher_handles,
+        ingress: pipeline_tx,
+        shutdown,
+    })
 }
 
 fn spawn_watcher(
@@ -70,11 +86,21 @@ fn spawn_watcher(
             .spawn(move || {
                 let (rx, _debouncer) = runtime_watcher.watch().expect("failed to start watcher");
                 loop {
-                    if ctx2.shutdown.load(Ordering::Relaxed) { break; }
+                    if ctx2.shutdown.load(Ordering::Relaxed) {
+                        break;
+                    }
                     match rx.recv_timeout(std::time::Duration::from_millis(200)) {
                         Ok(ev) => {
                             debug!("raw event {:?}", ev);
-                            if ingress_tx_clone.send(PipelineMsg { event: ev, rules: runtime_watcher.rules.clone() }).is_err() { break; }
+                            if ingress_tx_clone
+                                .send(PipelineMsg {
+                                    event: ev,
+                                    rules: runtime_watcher.rules.clone(),
+                                })
+                                .is_err()
+                            {
+                                break;
+                            }
                         }
                         Err(mpsc::RecvTimeoutError::Timeout) => {}
                         Err(mpsc::RecvTimeoutError::Disconnected) => break,

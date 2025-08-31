@@ -1,8 +1,8 @@
-use serde_derive::Deserialize;
 use crate::conditions::{
-    Condition, RegexCondition, GlobCondition, 
-    ExtensionCondition, SizeGtCondition, SizeLtCondition, ContainsCondition
+    Condition, ContainsCondition, ExtensionCondition, GlobCondition, RegexCondition,
+    SizeGtCondition, SizeLtCondition,
 };
+use serde_derive::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -27,4 +27,3 @@ impl ConditionConfig {
         }
     }
 }
-

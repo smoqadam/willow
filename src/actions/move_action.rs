@@ -1,8 +1,8 @@
 use crate::actions::Action;
-use crate::template::Template;
 use crate::engine::EngineCtx;
-use std::path::Path;
+use crate::template::Template;
 use log::{debug, error, info};
+use std::path::Path;
 
 pub struct MoveAction {
     destination: String,
@@ -20,19 +20,20 @@ impl Action for MoveAction {
 
         let template = Template::new(self.destination.clone());
         let rendered_destination = template.render(path);
-        
+
         let dest_path = Path::new(&rendered_destination);
-        
+
         // append the filename if the rendered destination is a directory
-        let final_dest_path = if rendered_destination.ends_with('/') || rendered_destination.ends_with('\\') {
-            let filename = path
-                .file_name()
-                .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", path))?;
-            dest_path.join(filename)
-        } else {
-            dest_path.to_path_buf()
-        };
-        
+        let final_dest_path =
+            if rendered_destination.ends_with('/') || rendered_destination.ends_with('\\') {
+                let filename = path
+                    .file_name()
+                    .ok_or_else(|| anyhow::anyhow!("No filename in path {:?}", path))?;
+                dest_path.join(filename)
+            } else {
+                dest_path.to_path_buf()
+            };
+
         debug!("Moving {:?} to {:?}", path, final_dest_path);
 
         // create parent directory if it doesn't exist

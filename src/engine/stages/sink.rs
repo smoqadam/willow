@@ -1,8 +1,8 @@
-use crate::engine::pipeline::{Sink, PipelineMsg};
-use std::sync::mpsc::Receiver;
-use std::sync::Arc;
-use log::error;
 use crate::engine::EngineCtx;
+use crate::engine::pipeline::{PipelineMsg, Sink};
+use log::error;
+use std::sync::Arc;
+use std::sync::mpsc::Receiver;
 
 pub struct ActionSink;
 

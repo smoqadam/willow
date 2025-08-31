@@ -1,14 +1,19 @@
+use crate::models::{Event, EventInfo, RuntimeWatcher};
+use log::debug;
+use notify::{EventKind, RecommendedWatcher, RecursiveMode};
+use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
-use log::debug;
-use notify::{EventKind, RecommendedWatcher, RecursiveMode};
-use crate::models::{Event, EventInfo, RuntimeWatcher};
-use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, FileIdMap};
 
 impl RuntimeWatcher {
-    pub fn watch(&self) -> anyhow::Result<(mpsc::Receiver<EventInfo>, Debouncer<RecommendedWatcher, FileIdMap>)> {
+    pub fn watch(
+        &self,
+    ) -> anyhow::Result<(
+        mpsc::Receiver<EventInfo>,
+        Debouncer<RecommendedWatcher, FileIdMap>,
+    )> {
         let (tx, rx) = mpsc::channel();
         let ignore_set: std::sync::Arc<HashSet<String>> = std::sync::Arc::new(
             self.ignore
@@ -16,23 +21,23 @@ impl RuntimeWatcher {
                 .unwrap_or(&[])
                 .iter()
                 .map(|s| s.to_ascii_lowercase())
-                .collect::<HashSet<_>>()
+                .collect::<HashSet<_>>(),
         );
 
         // Pre-compute which event kinds this watcher cares about based on its rules
-        let allowed_events: HashSet<Event> = self
-            .rules
-            .iter()
-            .map(|r| r.event.clone())
-            .collect();
-        
+        let allowed_events: HashSet<Event> = self.rules.iter().map(|r| r.event.clone()).collect();
+
         let mut debouncer = new_debouncer(
             Duration::from_millis(100),
             None,
             move |event_result: DebounceEventResult| {
                 if let Ok(res) = event_result {
-                    let Some(last_event) = res.last() else { return; };
-                    let Some(first_path) = last_event.paths.get(0) else { return; };
+                    let Some(last_event) = res.last() else {
+                        return;
+                    };
+                    let Some(first_path) = last_event.paths.get(0) else {
+                        return;
+                    };
 
                     let ext = first_path
                         .extension()
@@ -41,7 +46,10 @@ impl RuntimeWatcher {
                         .unwrap_or_default();
 
                     if ignore_set.contains(&ext) {
-                        debug!("event ignored for {:?}. reason: ignored extension: .{ext}", first_path);
+                        debug!(
+                            "event ignored for {:?}. reason: ignored extension: .{ext}",
+                            first_path
+                        );
                         return;
                     }
 
@@ -59,8 +67,7 @@ impl RuntimeWatcher {
                     {
                         debug!(
                             "event ignored for {:?}. reason: unmatched event: {:?}",
-                            first_path,
-                            mapped_event
+                            first_path, mapped_event
                         );
                         return;
                     }
@@ -74,9 +81,9 @@ impl RuntimeWatcher {
                         return;
                     }
                 };
-            }
+            },
         )?;
-        
+
         let recursive = if self.recursive {
             RecursiveMode::Recursive
         } else {
