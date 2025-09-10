@@ -84,7 +84,7 @@ fn e2e_move_with_static_and_io_conditions_and_logs() {
         ],
         actions: vec![
             willow::action::ActionConfig::Log { message: "processing {filename}".into() }.into_action(),
-            willow::action::ActionConfig::Move { destination: dest.to_string_lossy().to_string() + "/" }.into_action(),
+            willow::action::ActionConfig::Move { destination: dest.to_string_lossy().to_string() + "/", overwrite: None }.into_action(),
         ],
     });
 

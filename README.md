@@ -4,11 +4,11 @@ A smart file watcher and organizer that monitors directories for file changes an
 
 ## What it does
 
-Willow watches specified directories for file system events (created, modified, deleted) and applies rules to organize, move, rename, or log information about files. It features:
+Willow watches specified directories for file system events (created, modified, deleted) and applies rules to organize, move, or log information about files. It features:
 
 - **Smart stability detection**: Waits for files to finish downloading/copying before acting
 - **Flexible conditions**: Match files by extension, glob patterns, regex, size, or content
-- **Multiple actions**: Move, rename, or log file events
+- **Multiple actions**: Move (supports renaming via templates) or log file events
 - **Template support**: Use dynamic placeholders in file paths and names
 - **Temporary file handling**: Ignores browser download artifacts (.part, .crdownload, etc.)
 
@@ -63,13 +63,13 @@ This config moves `jpg` files to `"/Users/username/Pictures/"` when they are cre
   - `size_gt`/`size_lt`: Match by file size
   - `contains`: Match by file content
 - **actions**: What to do with matching files:
-  - `move`: Move to destination directory
-  - `rename`: Rename using template
+  - `move`: Move to destination directory or file path template
+    - optional `overwrite` policy: `error` (default), `skip`, `overwrite`, `suffix`
   - `log`: Log a message
 
 ### Template Variables
 
-Use these placeholders in move destinations and rename templates:
+Use these placeholders in move destination templates:
 
 - `{filename}`: Full filename with extension
 - `{name}`: Filename without extension
@@ -77,6 +77,19 @@ Use these placeholders in move destinations and rename templates:
 - `{date}`: Current date (YYYY-MM-DD)
 - `{time}`: Current time (HH-MM-SS)
 - `{datetime}`: Full timestamp
+
+### Overwrite Policy Examples
+
+```yaml
+actions:
+  - type: "move"
+    destination: "/Users/username/Pictures/"    # ends with `/` = directory
+    overwrite: "suffix"                           # if exists, write file_1.ext, file_2.ext, ...
+
+  - type: "move"
+    destination: "{parent}/{name}_renamed.{ext}" # rename in-place using template
+    overwrite: "overwrite"                        # replace destination if it exists
+```
 
 ## Requirements
 

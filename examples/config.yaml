@@ -9,10 +9,12 @@ watchers:
         actions:
           - type: "move"
             destination: "/Users/username/Pictures/"
+            overwrite: "suffix"
       - event: "modified"
         conditions:
           - type: "extension"
             value: "pdf"
         actions:
           - type: "move"
-            destination: "/Users/username/Documents/PDFs/"
+            destination: "/Users/username/Documents/PDFs/{filename}"
+            overwrite: "overwrite"

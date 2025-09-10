@@ -3,16 +3,29 @@ use crate::engine::EngineCtx;
 use crate::template::Template;
 use log::{debug, error, info};
 use std::path::Path;
+use serde_derive::Deserialize;
 
 pub struct MoveAction {
     destination: String,
+    overwrite: MoveOverwritePolicy,
 }
 
 impl MoveAction {
-    pub fn new(destination: String) -> Self {
-        MoveAction { destination }
+    pub fn new(destination: String, overwrite: Option<MoveOverwritePolicy>) -> Self {
+        MoveAction { destination, overwrite: overwrite.unwrap_or_default() }
     }
 }
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum MoveOverwritePolicy {
+    Error,
+    Skip,
+    Overwrite,
+    Suffix,
+}
+
+impl Default for MoveOverwritePolicy { fn default() -> Self { MoveOverwritePolicy::Error } }
 
 impl Action for MoveAction {
     fn run(&self, path: &Path, ctx: &EngineCtx) -> anyhow::Result<()> {
@@ -41,12 +54,49 @@ impl Action for MoveAction {
             ctx.fs.create_dir_all(parent)?;
         }
 
-        // todo: check for overwrite
-        ctx.fs.rename(path, &final_dest_path).map_err(|e| {
+        // handle overwrite policy
+        let mut target = final_dest_path.clone();
+        if ctx.fs.exists(&target) {
+            match self.overwrite {
+                MoveOverwritePolicy::Error => {
+                    return Err(anyhow::anyhow!(
+                        "Destination exists and overwrite policy=error: {:?}",
+                        target
+                    ));
+                }
+                MoveOverwritePolicy::Skip => {
+                    info!("destination exists, skipping move to {:?}", target);
+                    return Ok(());
+                }
+                MoveOverwritePolicy::Suffix => {
+                    let parent = target.parent().unwrap_or_else(|| Path::new(""));
+                    let stem = target.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+                    let ext = target.extension().and_then(|e| e.to_str()).unwrap_or("");
+                    let mut i = 1u32;
+                    loop {
+                        let candidate_name = if ext.is_empty() {
+                            format!("{}_{}", stem, i)
+                        } else {
+                            format!("{}_{}.{}", stem, i, ext)
+                        };
+                        let candidate = parent.join(candidate_name);
+                        if !ctx.fs.exists(&candidate) {
+                            target = candidate;
+                            break;
+                        }
+                        i += 1;
+                        if i > 10_000 { return Err(anyhow::anyhow!("Too many collisions for {:?}", final_dest_path)); }
+                    }
+                }
+                MoveOverwritePolicy::Overwrite => { /* proceed */ }
+            }
+        }
+
+        ctx.fs.rename(path, &target).map_err(|e| {
             error!("Move action error: {:?}", e);
-            anyhow::anyhow!("Failed to move {:?} to {:?}: {}", path, final_dest_path, e)
+            anyhow::anyhow!("Failed to move {:?} to {:?}: {}", path, target, e)
         })?;
-        info!("moved {:?} to {:?}", path, final_dest_path);
+        info!("moved {:?} to {:?}", path, target);
         Ok(())
     }
 }
@@ -63,6 +113,7 @@ mod tests {
     struct MockFs {
         pub renames: std::sync::Mutex<Vec<(PathBuf, PathBuf)>>,
         pub created_dirs: std::sync::Mutex<Vec<PathBuf>>,
+        pub existing: std::sync::Mutex<Vec<PathBuf>>,
     }
 
     impl Fs for MockFs {
@@ -73,16 +124,8 @@ mod tests {
             self.created_dirs.lock().unwrap().push(path.to_path_buf());
             Ok(())
         }
-        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
-            self.renames
-                .lock()
-                .unwrap()
-                .push((from.to_path_buf(), to.to_path_buf()));
-            Ok(())
-        }
-        fn exists(&self, _path: &Path) -> bool {
-            false
-        }
+        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> { self.renames.lock().unwrap().push((from.to_path_buf(), to.to_path_buf())); Ok(()) }
+        fn exists(&self, path: &Path) -> bool { self.existing.lock().unwrap().contains(&path.to_path_buf()) }
         fn read_to_string(&self, _path: &Path) -> io::Result<String> {
             Err(io::Error::new(io::ErrorKind::Other, "not used"))
         }
@@ -92,7 +135,7 @@ mod tests {
     fn moves_into_directory_when_destination_ends_with_slash() {
         let fs = Arc::new(MockFs::default());
         let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
-        let action = MoveAction::new("/dest/dir/".to_string());
+        let action = MoveAction::new("/dest/dir/".to_string(), None);
         let path = PathBuf::from("/src/path/file.txt");
 
         action.run(&path, &ctx).unwrap();
@@ -109,7 +152,7 @@ mod tests {
     fn moves_to_exact_destination_when_path_given() {
         let fs = Arc::new(MockFs::default());
         let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
-        let action = MoveAction::new("/dest/final/name.txt".to_string());
+        let action = MoveAction::new("/dest/final/name.txt".to_string(), None);
         let path = PathBuf::from("/src/path/file.txt");
 
         action.run(&path, &ctx).unwrap();
@@ -120,5 +163,51 @@ mod tests {
         assert_eq!(renames.len(), 1);
         assert_eq!(renames[0].0, PathBuf::from("/src/path/file.txt"));
         assert_eq!(renames[0].1, PathBuf::from("/dest/final/name.txt"));
+    }
+
+    #[test]
+    fn skip_when_destination_exists() {
+        let fs = Arc::new(MockFs { existing: std::sync::Mutex::new(vec![PathBuf::from("/dest/dir/file.txt")]), ..Default::default() });
+        let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
+        let action = MoveAction::new("/dest/dir/".to_string(), Some(MoveOverwritePolicy::Skip));
+        let path = PathBuf::from("/src/path/file.txt");
+        action.run(&path, &ctx).unwrap();
+        assert!(fs.renames.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn suffix_when_destination_exists() {
+        let existing = vec![PathBuf::from("/dest/dir/file.txt"), PathBuf::from("/dest/dir/file_1.txt")];
+        let fs = Arc::new(MockFs { existing: std::sync::Mutex::new(existing), ..Default::default() });
+        let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
+        let action = MoveAction::new("/dest/dir/".to_string(), Some(MoveOverwritePolicy::Suffix));
+        let path = PathBuf::from("/src/path/file.txt");
+        action.run(&path, &ctx).unwrap();
+        let renames = fs.renames.lock().unwrap().clone();
+        assert_eq!(renames.len(), 1);
+        assert_eq!(renames[0].1, PathBuf::from("/dest/dir/file_2.txt"));
+    }
+
+    #[test]
+    fn error_when_destination_exists() {
+        let fs = Arc::new(MockFs { existing: std::sync::Mutex::new(vec![PathBuf::from("/dest/dir/file.txt")]), ..Default::default() });
+        let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
+        let action = MoveAction::new("/dest/dir/".to_string(), Some(MoveOverwritePolicy::Error));
+        let path = PathBuf::from("/src/path/file.txt");
+        let res = action.run(&path, &ctx);
+        assert!(res.is_err());
+        assert!(fs.renames.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn overwrite_when_destination_exists() {
+        let fs = Arc::new(MockFs { existing: std::sync::Mutex::new(vec![PathBuf::from("/dest/dir/file.txt")]), ..Default::default() });
+        let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
+        let action = MoveAction::new("/dest/dir/".to_string(), Some(MoveOverwritePolicy::Overwrite));
+        let path = PathBuf::from("/src/path/file.txt");
+        action.run(&path, &ctx).unwrap();
+        let renames = fs.renames.lock().unwrap().clone();
+        assert_eq!(renames.len(), 1);
+        assert_eq!(renames[0].1, PathBuf::from("/dest/dir/file.txt"));
     }
 }
