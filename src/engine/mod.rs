@@ -3,10 +3,8 @@ mod pipeline;
 mod stages;
 
 pub use context::EngineCtx;
-pub use pipeline::{PipelineMsg, Sink, Stage};
-
-use crate::engine::pipeline::PipelineBuilder;
-use crate::engine::stages::{ActionSink, IoFilterStage, StabilityStage, StaticFilterStage};
+pub use pipeline::{PipelineBuilder, PipelineMsg, Sink, Stage};
+pub use stages::{ActionSink, IoFilterStage, StabilityStage, StaticFilterStage};
 use crate::fs::{Fs, StdFs};
 use crate::models::{Config, RuntimeRule, RuntimeWatcher, Watcher};
 use log::debug;
