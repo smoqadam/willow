@@ -391,3 +391,154 @@ impl Stage for StabilityStage {
         info!("Stability stage shut down cleanly");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::EngineCtx;
+    use crate::fs::{Fs, StdFs};
+    use crate::models::{Event, EventInfo, FileMeta, RuntimeRule};
+    use std::fs as stdfs;
+    use std::io::Write;
+    use std::sync::{Arc, mpsc};
+    use std::time::Duration;
+
+    fn ctx_std() -> Arc<EngineCtx> {
+        Arc::new(EngineCtx::new(
+            Arc::new(StdFs::new()) as Arc<dyn Fs>,
+            Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        ))
+    }
+
+    fn dummy_rules() -> Vec<Arc<RuntimeRule>> {
+        vec![]
+    }
+
+    #[test]
+    fn emits_after_quiet_and_stability() {
+        let dir = std::path::PathBuf::from("target/test_stability_emits");
+        let _ = stdfs::create_dir_all(&dir);
+        let file_rel = dir.join("sample.txt");
+        stdfs::write(&file_rel, b"hello").unwrap();
+        let file = stdfs::canonicalize(&file_rel).unwrap();
+
+        let ctx = ctx_std();
+        let (tx, rx) = mpsc::channel();
+        let mut stage = StabilityStage::new();
+        stage.min_quiet = Duration::from_millis(0);
+        stage.stable_required = 2;
+
+        stage.add_event(
+            EventInfo {
+                path: file.clone(),
+                event: Event::Modified,
+                meta: Some(FileMeta {
+                    size: None,
+                    modified: None,
+                    name: None,
+                    ext: None,
+                }),
+            },
+            dummy_rules(),
+        );
+
+        // Need multiple probes to exceed stable_required
+        for _ in 0..3 {
+            stage.check_stability(&ctx, &tx);
+        }
+        let msg = rx.try_recv().expect("expected stable emit");
+        assert_eq!(msg.event.path, file);
+        assert_eq!(msg.event.event, Event::Modified);
+    }
+
+    #[test]
+    fn temp_artifacts_block_until_gone() {
+        let dir = std::path::PathBuf::from("target/test_stability_temp");
+        let _ = stdfs::create_dir_all(&dir);
+        let base = "video";
+        let temp_rel = dir.join(format!("{}.part", base));
+        let real_rel = dir.join(format!("{}.mp4", base));
+
+        // create temp and real files
+        stdfs::write(&temp_rel, b"downloading...").unwrap();
+        stdfs::write(&real_rel, b"content").unwrap();
+        let temp = stdfs::canonicalize(&temp_rel).unwrap();
+        let real = stdfs::canonicalize(&real_rel).unwrap();
+
+        let ctx = ctx_std();
+        let (tx, rx) = mpsc::channel();
+        let mut stage = StabilityStage::new();
+        stage.min_quiet = Duration::from_millis(0);
+        stage.stable_required = 1; // faster
+
+        // First, signal temp artifact presence
+        stage.add_event(
+            EventInfo {
+                path: temp.clone(),
+                event: Event::Created,
+                meta: None,
+            },
+            dummy_rules(),
+        );
+
+        // Then track the real file
+        stage.add_event(
+            EventInfo {
+                path: real.clone(),
+                event: Event::Modified,
+                meta: None,
+            },
+            dummy_rules(),
+        );
+
+        // While temp exists, it should not emit
+        for _ in 0..3 {
+            stage.check_stability(&ctx, &tx);
+        }
+        assert!(rx.try_recv().is_err(), "should not emit while temp present");
+
+        // Remove temp artifact and clear sibling map (simulating temp finished)
+        stdfs::remove_file(&temp).unwrap();
+        stage.sibling_map.remove(base);
+        for _ in 0..3 {
+            stage.check_stability(&ctx, &tx);
+        }
+        let msg = rx.try_recv().expect("expected emit after temp gone");
+        assert_eq!(msg.event.path, real);
+    }
+
+    #[test]
+    fn gives_up_after_max_checks_without_stability() {
+        let dir = std::path::PathBuf::from("target/test_stability_giveup");
+        let _ = stdfs::create_dir_all(&dir);
+        let file = dir.join("flappy.bin");
+        stdfs::write(&file, b"0").unwrap();
+
+        let ctx = ctx_std();
+        let (tx, rx) = mpsc::channel();
+        let mut stage = StabilityStage::new();
+        stage.min_quiet = Duration::from_millis(0);
+        stage.stable_required = 100; // unreachable
+        stage.max_checks = 2; // give up fast
+
+        stage.add_event(
+            EventInfo {
+                path: file.clone(),
+                event: Event::Modified,
+                meta: None,
+            },
+            dummy_rules(),
+        );
+
+        // Change file each probe to avoid stability
+        for i in 0..4 {
+            let mut f = stdfs::OpenOptions::new().append(true).open(&file).unwrap();
+            writeln!(f, "{}", i).unwrap();
+            stage.check_stability(&ctx, &tx);
+        }
+
+        // Should have given up: no emits, and internal state cleared
+        assert!(rx.try_recv().is_err());
+        assert!(stage.state.is_empty());
+    }
+}

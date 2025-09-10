@@ -27,3 +27,31 @@ impl Condition for RegexCondition {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::EngineCtx;
+    use crate::fs::StdFs;
+    use crate::models::{Event, EventInfo};
+    use std::path::PathBuf;
+    use std::sync::{Arc, atomic::AtomicBool};
+
+    fn ctx() -> EngineCtx {
+        EngineCtx::new(Arc::new(StdFs::new()), Arc::new(AtomicBool::new(false)))
+    }
+
+    #[test]
+    fn matches_filename_against_regex() {
+        let cond = RegexCondition::new("^file_\\d+\\.txt$".to_string()).unwrap();
+        let ev = EventInfo { path: PathBuf::from("/tmp/dir/file_123.txt"), event: Event::Modified, meta: None };
+        assert!(cond.matches(&ev, &ctx()));
+    }
+
+    #[test]
+    fn does_not_match_non_matching_filename() {
+        let cond = RegexCondition::new("^file_\\d+\\.txt$".to_string()).unwrap();
+        let ev = EventInfo { path: PathBuf::from("/tmp/dir/other.log"), event: Event::Modified, meta: None };
+        assert!(!cond.matches(&ev, &ctx()));
+    }
+}

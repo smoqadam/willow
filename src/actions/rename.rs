@@ -34,3 +34,55 @@ impl Action for RenameAction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fs::Fs;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Arc, atomic::AtomicBool};
+    use std::{fs, io};
+
+    #[derive(Default)]
+    struct MockFs {
+        pub renames: std::sync::Mutex<Vec<(PathBuf, PathBuf)>>,
+    }
+
+    impl Fs for MockFs {
+        fn metadata(&self, _path: &Path) -> io::Result<fs::Metadata> {
+            // Not used in these tests
+            Err(io::Error::new(io::ErrorKind::Other, "not used"))
+        }
+        fn create_dir_all(&self, _path: &Path) -> io::Result<()> {
+            Ok(())
+        }
+        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.renames
+                .lock()
+                .unwrap()
+                .push((from.to_path_buf(), to.to_path_buf()));
+            Ok(())
+        }
+        fn exists(&self, _path: &Path) -> bool {
+            false
+        }
+        fn read_to_string(&self, _path: &Path) -> io::Result<String> {
+            Err(io::Error::new(io::ErrorKind::Other, "not used"))
+        }
+    }
+
+    #[test]
+    fn renames_with_template_in_same_dir() {
+        let fs = Arc::new(MockFs::default());
+        let ctx = EngineCtx::new(fs.clone(), Arc::new(AtomicBool::new(false)));
+        let action = RenameAction::new("{name}_renamed.{ext}".to_string());
+        let path = PathBuf::from("/tmp/dir/file.txt");
+
+        action.run(&path, &ctx).unwrap();
+
+        let renames = fs.renames.lock().unwrap().clone();
+        assert_eq!(renames.len(), 1);
+        assert_eq!(renames[0].0, PathBuf::from("/tmp/dir/file.txt"));
+        assert_eq!(renames[0].1, PathBuf::from("/tmp/dir/file_renamed.txt"));
+    }
+}

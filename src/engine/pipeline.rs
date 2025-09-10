@@ -81,3 +81,76 @@ impl PipelineBuilder {
         (ingress_tx, handles)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::EngineCtx;
+    use crate::fs::{Fs, StdFs};
+    use crate::models::{Event, EventInfo, FileMeta, RuntimeRule};
+    use std::path::PathBuf;
+    use std::sync::{Arc, mpsc};
+
+    struct PassThroughStage;
+    impl Stage for PassThroughStage {
+        fn run(
+            &mut self,
+            _ctx: Arc<EngineCtx>,
+            rx: Receiver<PipelineMsg>,
+            tx: Sender<PipelineMsg>,
+        ) {
+            while let Ok(msg) = rx.recv() {
+                let _ = tx.send(msg);
+            }
+        }
+    }
+
+    struct CaptureSink {
+        pub out: Sender<PipelineMsg>,
+    }
+    impl Sink for CaptureSink {
+        fn run(&mut self, _ctx: Arc<EngineCtx>, rx: Receiver<PipelineMsg>) {
+            while let Ok(msg) = rx.recv() {
+                let _ = self.out.send(msg);
+            }
+        }
+    }
+
+    #[test]
+    fn pipeline_wires_through_stage_to_sink() {
+        let (capt_tx, capt_rx) = mpsc::channel();
+        let ctx = Arc::new(EngineCtx::new(
+            Arc::new(StdFs::new()) as Arc<dyn Fs>,
+            Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        ));
+        let builder = PipelineBuilder::new(ctx.clone(), CaptureSink { out: capt_tx })
+            .add_stage(PassThroughStage);
+        let (ingress, handles) = builder.build();
+
+        let msg = PipelineMsg {
+            event: EventInfo {
+                path: PathBuf::from("/x"),
+                event: Event::Modified,
+                meta: Some(FileMeta {
+                    size: Some(1),
+                    modified: None,
+                    name: None,
+                    ext: None,
+                }),
+            },
+            rules: Vec::<Arc<RuntimeRule>>::new(),
+        };
+        ingress.send(msg).unwrap();
+        drop(ingress);
+
+        // Receive from sink
+        let got = capt_rx
+            .recv_timeout(std::time::Duration::from_secs(2))
+            .expect("sink should forward message");
+        assert_eq!(got.event.path, PathBuf::from("/x"));
+
+        for h in handles {
+            let _ = h.join();
+        }
+    }
+}

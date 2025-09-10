@@ -27,3 +27,31 @@ impl Condition for GlobCondition {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::EngineCtx;
+    use crate::fs::StdFs;
+    use crate::models::{Event, EventInfo};
+    use std::path::PathBuf;
+    use std::sync::{Arc, atomic::AtomicBool};
+
+    fn ctx() -> EngineCtx {
+        EngineCtx::new(Arc::new(StdFs::new()), Arc::new(AtomicBool::new(false)))
+    }
+
+    #[test]
+    fn matches_glob_on_filename() {
+        let cond = GlobCondition::new("*.jpeg".to_string()).unwrap();
+        let ev = EventInfo { path: PathBuf::from("/tmp/pic.jpeg"), event: Event::Created, meta: None };
+        assert!(cond.matches(&ev, &ctx()));
+    }
+
+    #[test]
+    fn non_match_for_other_extensions() {
+        let cond = GlobCondition::new("*.jpeg".to_string()).unwrap();
+        let ev = EventInfo { path: PathBuf::from("/tmp/doc.pdf"), event: Event::Created, meta: None };
+        assert!(!cond.matches(&ev, &ctx()));
+    }
+}

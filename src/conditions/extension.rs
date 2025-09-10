@@ -25,3 +25,31 @@ impl Condition for ExtensionCondition {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::EngineCtx;
+    use crate::fs::StdFs;
+    use crate::models::{Event, EventInfo};
+    use std::path::PathBuf;
+    use std::sync::{Arc, atomic::AtomicBool};
+
+    fn ctx() -> EngineCtx {
+        EngineCtx::new(Arc::new(StdFs::new()), Arc::new(AtomicBool::new(false)))
+    }
+
+    #[test]
+    fn matches_exact_extension() {
+        let cond = ExtensionCondition::new("txt".into());
+        let ev = EventInfo { path: PathBuf::from("/x/file.txt"), event: Event::Any, meta: None };
+        assert!(cond.matches(&ev, &ctx()));
+    }
+
+    #[test]
+    fn does_not_match_when_extension_differs() {
+        let cond = ExtensionCondition::new("txt".into());
+        let ev = EventInfo { path: PathBuf::from("/x/file.md"), event: Event::Any, meta: None };
+        assert!(!cond.matches(&ev, &ctx()));
+    }
+}
