@@ -1,6 +1,8 @@
 use std::fs::Metadata;
 use std::path::Path;
 use std::{fs, io};
+use log::info;
+use std::sync::Arc;
 
 pub trait Fs: Send + Sync {
     fn metadata(&self, path: &Path) -> io::Result<Metadata>;
@@ -38,4 +40,26 @@ impl Fs for StdFs {
     fn read_to_string(&self, path: &Path) -> io::Result<String> {
         fs::read_to_string(path)
     }
+}
+
+pub struct DryRunFs {
+    inner: Arc<dyn Fs>,
+}
+
+impl DryRunFs {
+    pub fn new(inner: Arc<dyn Fs>) -> Self { Self { inner } }
+}
+
+impl Fs for DryRunFs {
+    fn metadata(&self, path: &Path) -> io::Result<Metadata> { self.inner.metadata(path) }
+    fn create_dir_all(&self, path: &Path) -> io::Result<()> {
+        info!("[dry-run] create_dir_all {:?}", path);
+        Ok(())
+    }
+    fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
+        info!("[dry-run] move {:?} -> {:?}", from, to);
+        Ok(())
+    }
+    fn exists(&self, path: &Path) -> bool { self.inner.exists(path) }
+    fn read_to_string(&self, path: &Path) -> io::Result<String> { self.inner.read_to_string(path) }
 }

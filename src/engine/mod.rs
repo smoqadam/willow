@@ -37,21 +37,14 @@ impl EngineHandle {
     }
 }
 
-pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
+pub fn start_with_fs(config: &Config, fs: Arc<dyn Fs>) -> anyhow::Result<EngineHandle> {
     let shutdown = Arc::new(AtomicBool::new(false));
-    let ctx = Arc::new(EngineCtx::new(
-        Arc::new(StdFs::new()) as Arc<dyn Fs>,
-        shutdown.clone(),
-    ));
+    let ctx = Arc::new(EngineCtx::new(fs, shutdown.clone()));
 
     let builder = PipelineBuilder::new(ctx.clone(), ActionSink::new());
     let (pipeline_tx, stage_handles) = builder
-        // only for static conditions that can be run on path (e.g regex)
         .add_stage(StaticFilterStage::new())
-        // this stage checks  if the file is stable
         .add_stage(StabilityStage::new())
-        // some conditions (kind::IO) requires to access filesystem therefore they are more expensive
-        // and some times the file need to be stable enough to check its size (e.g. SizeGt conditions)
         .add_stage(IoFilterStage::new())
         .build();
 
@@ -62,6 +55,10 @@ pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
         ingress: pipeline_tx,
         shutdown,
     })
+}
+
+pub fn start(config: &Config) -> anyhow::Result<EngineHandle> {
+    start_with_fs(config, Arc::new(StdFs::new()) as Arc<dyn Fs>)
 }
 
 fn spawn_watcher(

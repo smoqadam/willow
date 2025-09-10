@@ -26,6 +26,15 @@ Willow watches specified directories for file system events (created, modified, 
    ./target/release/willow --config config.yaml
    ```
 
+### Dry-run mode
+
+Preview actions without changing the filesystem:
+
+```bash
+./target/release/willow --config config.yaml --dry-run
+```
+Logs will include planned operations like `[dry-run] move src -> dest` and `[dry-run] create_dir_all path`.
+
 ## Example Configuration
 
 ```yaml
