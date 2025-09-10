@@ -56,7 +56,7 @@ impl Condition for SizeLtCondition {
 mod tests {
     use super::*;
     use crate::engine::EngineCtx;
-    use crate::fs::{Fs, StdFs};
+    use crate::fs::StdFs;
     use crate::models::{Event, EventInfo, FileMeta};
     use std::path::PathBuf;
     use std::sync::{Arc, atomic::AtomicBool};

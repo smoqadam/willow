@@ -1,5 +1,4 @@
 use super::context::EngineCtx;
-use crate::engine::ActionSink;
 use crate::models::{EventInfo, RuntimeRule};
 use std::sync::{
     Arc, mpsc,
@@ -43,12 +42,7 @@ impl PipelineBuilder {
         self.stages.push(Box::new(stage));
         self
     }
-
-    pub fn sink(mut self, sink: impl Sink + 'static) -> Self {
-        self.sink = Box::new(sink);
-        self
-    }
-
+    
     pub fn build(self) -> (Sender<PipelineMsg>, Vec<JoinHandle<()>>) {
         let mut handles = Vec::new();
         let (ingress_tx, mut prev_rx) = mpsc::channel::<PipelineMsg>();
