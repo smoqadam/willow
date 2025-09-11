@@ -1,7 +1,7 @@
 use crate::models::{Event, EventInfo, RuntimeWatcher};
 use log::debug;
-use notify::{EventKind, RecommendedWatcher, RecursiveMode};
-use notify_debouncer_full::{DebounceEventResult, Debouncer, FileIdMap, new_debouncer};
+use notify::{EventKind, RecursiveMode};
+use notify_debouncer_full::{DebounceEventResult, new_debouncer};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -10,10 +10,7 @@ use std::time::Duration;
 impl RuntimeWatcher {
     pub fn watch(
         &self,
-    ) -> anyhow::Result<(
-        mpsc::Receiver<EventInfo>,
-        Debouncer<RecommendedWatcher, FileIdMap>,
-    )> {
+    ) -> anyhow::Result<(mpsc::Receiver<EventInfo>, Box<dyn std::any::Any + Send>)> {
         let (tx, rx) = mpsc::channel();
         let ignore_set: std::sync::Arc<HashSet<String>> = std::sync::Arc::new(
             self.ignore
@@ -88,6 +85,6 @@ impl RuntimeWatcher {
         };
 
         debouncer.watch(&self.path, recursive)?;
-        Ok((rx, debouncer))
+        Ok((rx, Box::new(debouncer)))
     }
 }
