@@ -74,6 +74,7 @@ This config moves `jpg` files to `"/Users/username/Pictures/"` when they are cre
 - **actions**: What to do with matching files:
   - `move`: Move to destination directory or file path template
     - optional `overwrite` policy: `error` (default), `skip`, `overwrite`, `suffix`
+  - `exec`: Run a command with templated args/env/cwd, optional timeout
   - `log`: Log a message
 
 ### Template Variables
@@ -98,6 +99,15 @@ actions:
   - type: "move"
     destination: "{parent}/{name}_renamed.{ext}" # rename in-place using template
     overwrite: "overwrite"                        # replace destination if it exists
+
+  - type: "exec"
+    command: "/usr/bin/echo"
+    args: ["Processing", "{filename}"]
+    env:
+      - ["SRC_PATH", "{path}"]
+      - ["FILE_NAME", "{name}.{ext}"]
+      - ["TODAY", "{date}"]
+    timeout_secs: 5
 ```
 
 ## Requirements

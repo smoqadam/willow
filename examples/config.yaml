@@ -18,3 +18,15 @@ watchers:
           - type: "move"
             destination: "/Users/username/Documents/PDFs/{filename}"
             overwrite: "overwrite"
+      - event: "created"
+        conditions:
+          - type: "glob"
+            value: "*.txt"
+        actions:
+          - type: "exec"
+            command: "/usr/bin/echo"
+            args: ["New file:", "{filename}"]
+            env:
+              - ["SRC_PATH", "{path}"]
+              - ["FILE_NAME", "{name}.{ext}"]
+              - ["TODAY", "{date}"]
