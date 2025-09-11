@@ -38,6 +38,7 @@ impl EngineHandle {
 }
 
 pub fn start_with_fs(config: &Config, fs: Arc<dyn Fs>) -> anyhow::Result<EngineHandle> {
+    crate::config::validate(config, fs.clone())?;
     let shutdown = Arc::new(AtomicBool::new(false));
     let ctx = Arc::new(EngineCtx::new(fs, shutdown.clone()));
 
