@@ -198,10 +198,10 @@ impl StabilityStage {
 
     fn has_sibling_artifacts(&self, basename: &str, ctx: &EngineCtx) -> bool {
         // Check sibling map first
-        if let Some(siblings) = self.sibling_map.get(basename) {
-            if !siblings.is_empty() {
-                return true;
-            }
+        if let Some(siblings) = self.sibling_map.get(basename)
+            && !siblings.is_empty()
+        {
+            return true;
         }
 
         // More efficient filesystem probing - find any file with this basename first

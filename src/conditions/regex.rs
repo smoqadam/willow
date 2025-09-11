@@ -19,10 +19,10 @@ impl Condition for RegexCondition {
         crate::conditions::ConditionKind::Static
     }
     fn matches(&self, ev: &EventInfo, _ctx: &EngineCtx) -> bool {
-        if let Some(filename) = ev.path.file_name() {
-            if let Some(filename_str) = filename.to_str() {
-                return self.regex.is_match(filename_str);
-            }
+        if let Some(filename) = ev.path.file_name()
+            && let Some(filename_str) = filename.to_str()
+        {
+            return self.regex.is_match(filename_str);
         }
         false
     }

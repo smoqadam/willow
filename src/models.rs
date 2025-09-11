@@ -60,7 +60,10 @@ pub struct EventInfo {
 #[derive(Debug, Clone)]
 pub struct FileMeta {
     pub size: Option<u64>,
+    #[allow(dead_code)]
     pub modified: Option<SystemTime>,
+    #[allow(dead_code)]
     pub name: Option<String>,
+    #[allow(dead_code)]
     pub ext: Option<String>,
 }

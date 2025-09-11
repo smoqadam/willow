@@ -17,10 +17,10 @@ impl Condition for ExtensionCondition {
         crate::conditions::ConditionKind::Static
     }
     fn matches(&self, ev: &EventInfo, _ctx: &EngineCtx) -> bool {
-        if let Some(ext) = ev.path.extension() {
-            if let Some(ext_str) = ext.to_str() {
-                return ext_str == self.extension;
-            }
+        if let Some(ext) = ev.path.extension()
+            && let Some(ext_str) = ext.to_str()
+        {
+            return ext_str == self.extension;
         }
         false
     }
