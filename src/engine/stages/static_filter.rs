@@ -5,6 +5,12 @@ use std::sync::mpsc::{Receiver, Sender};
 
 pub struct StaticFilterStage;
 
+impl Default for StaticFilterStage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StaticFilterStage {
     pub fn new() -> Self {
         Self

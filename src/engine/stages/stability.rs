@@ -35,6 +35,12 @@ pub struct StabilityStage {
     cleanup_interval: Duration,
 }
 
+impl Default for StabilityStage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StabilityStage {
     pub fn new() -> Self {
         Self {
@@ -208,9 +214,9 @@ impl StabilityStage {
         if let Some(parent) = sample_parent {
             // Only check a reasonable number of extensions to prevent DoS
             for ext in self.temp_extensions.iter().take(10) {
-                let temp_path = parent.join(format!("{}.{}", basename, ext));
+                let temp_path = parent.join(format!("{basename}.{ext}"));
                 if ctx.fs.exists(&temp_path) {
-                    debug!("Found temp artifact on filesystem: {:?}", temp_path);
+                    debug!("Found temp artifact on filesystem: {temp_path:?}");
                     return true;
                 }
             }
@@ -239,7 +245,7 @@ impl StabilityStage {
 
             // Skip if not past quiet period
             if now.duration_since(file.last_event) < self.min_quiet {
-                debug!("Skipping {:?}, not past quiet period", path);
+                debug!("Skipping {path:?}, not past quiet period");
                 continue;
             }
 
@@ -346,13 +352,13 @@ impl StabilityStage {
 
         // Clean up state
         for path in to_remove {
-            debug!("Removing file from state: {:?}", path);
+            debug!("Removing file from state: {path:?}");
             self.state.remove(&path);
         }
 
         // Clean up sibling map more efficiently
         for basename in cleared_basenames {
-            debug!("Clearing sibling map for: {:?}", basename);
+            debug!("Clearing sibling map for: {basename:?}");
             self.sibling_map.remove(&basename);
         }
     }
@@ -456,8 +462,8 @@ mod tests {
         let dir = std::path::PathBuf::from("target/test_stability_temp");
         let _ = stdfs::create_dir_all(&dir);
         let base = "video";
-        let temp_rel = dir.join(format!("{}.part", base));
-        let real_rel = dir.join(format!("{}.mp4", base));
+        let temp_rel = dir.join(format!("{base}.part"));
+        let real_rel = dir.join(format!("{base}.mp4"));
 
         // create temp and real files
         stdfs::write(&temp_rel, b"downloading...").unwrap();
@@ -533,7 +539,7 @@ mod tests {
         // Change file each probe to avoid stability
         for i in 0..4 {
             let mut f = stdfs::OpenOptions::new().append(true).open(&file).unwrap();
-            writeln!(f, "{}", i).unwrap();
+            writeln!(f, "{i}").unwrap();
             stage.check_stability(&ctx, &tx);
         }
 

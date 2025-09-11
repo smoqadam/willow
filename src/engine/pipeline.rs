@@ -42,7 +42,7 @@ impl PipelineBuilder {
         self.stages.push(Box::new(stage));
         self
     }
-    
+
     pub fn build(self) -> (Sender<PipelineMsg>, Vec<JoinHandle<()>>) {
         let mut handles = Vec::new();
         let (ingress_tx, mut prev_rx) = mpsc::channel::<PipelineMsg>();
@@ -51,7 +51,7 @@ impl PipelineBuilder {
         for (i, mut stage) in self.stages.into_iter().enumerate() {
             let (next_tx, next_rx) = mpsc::channel::<PipelineMsg>();
             let ctx = self.ctx.clone();
-            let name = format!("stage-{}", i);
+            let name = format!("stage-{i}");
             let handle = thread::Builder::new()
                 .name(name)
                 .spawn(move || {

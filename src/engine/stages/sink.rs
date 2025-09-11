@@ -6,6 +6,12 @@ use std::sync::mpsc::Receiver;
 
 pub struct ActionSink;
 
+impl Default for ActionSink {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ActionSink {
     pub fn new() -> Self {
         Self

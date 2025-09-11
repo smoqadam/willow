@@ -35,7 +35,7 @@ impl RuntimeWatcher {
                     let Some(last_event) = res.last() else {
                         return;
                     };
-                    let Some(first_path) = last_event.paths.get(0) else {
+                    let Some(first_path) = last_event.paths.first() else {
                         return;
                     };
 
@@ -47,8 +47,7 @@ impl RuntimeWatcher {
 
                     if ignore_set.contains(&ext) {
                         debug!(
-                            "event ignored for {:?}. reason: ignored extension: .{ext}",
-                            first_path
+                            "event ignored for {first_path:?}. reason: ignored extension: .{ext}"
                         );
                         return;
                     }
@@ -66,8 +65,7 @@ impl RuntimeWatcher {
                         && !allowed_events.contains(&mapped_event)
                     {
                         debug!(
-                            "event ignored for {:?}. reason: unmatched event: {:?}",
-                            first_path, mapped_event
+                            "event ignored for {first_path:?}. reason: unmatched event: {mapped_event:?}"
                         );
                         return;
                     }
@@ -77,10 +75,9 @@ impl RuntimeWatcher {
                         event: mapped_event,
                         meta: None,
                     }) {
-                        debug!("watcher channel closed while sending event: {:?}", e);
-                        return;
+                        debug!("watcher channel closed while sending event: {e:?}");
                     }
-                };
+                }
             },
         )?;
 

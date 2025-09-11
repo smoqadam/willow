@@ -44,14 +44,22 @@ mod tests {
     #[test]
     fn matches_glob_on_filename() {
         let cond = GlobCondition::new("*.jpeg".to_string()).unwrap();
-        let ev = EventInfo { path: PathBuf::from("/tmp/pic.jpeg"), event: Event::Created, meta: None };
+        let ev = EventInfo {
+            path: PathBuf::from("/tmp/pic.jpeg"),
+            event: Event::Created,
+            meta: None,
+        };
         assert!(cond.matches(&ev, &ctx()));
     }
 
     #[test]
     fn non_match_for_other_extensions() {
         let cond = GlobCondition::new("*.jpeg".to_string()).unwrap();
-        let ev = EventInfo { path: PathBuf::from("/tmp/doc.pdf"), event: Event::Created, meta: None };
+        let ev = EventInfo {
+            path: PathBuf::from("/tmp/doc.pdf"),
+            event: Event::Created,
+            meta: None,
+        };
         assert!(!cond.matches(&ev, &ctx()));
     }
 }

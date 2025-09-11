@@ -2,12 +2,12 @@ mod context;
 mod pipeline;
 mod stages;
 
-pub use context::EngineCtx;
-pub use pipeline::{PipelineBuilder, PipelineMsg};
-pub use stages::{ActionSink, IoFilterStage, StabilityStage, StaticFilterStage};
 use crate::fs::{Fs, StdFs};
 use crate::models::{Config, RuntimeRule, RuntimeWatcher, Watcher};
+pub use context::EngineCtx;
 use log::debug;
+pub use pipeline::{PipelineBuilder, PipelineMsg};
+pub use stages::{ActionSink, IoFilterStage, StabilityStage, StaticFilterStage};
 use std::sync::mpsc::Sender;
 use std::sync::{
     Arc,
@@ -73,7 +73,7 @@ fn spawn_watcher(
             path: watcher_config.path.clone().into(),
             recursive: watcher_config.recursive,
             ignore: watcher_config.ignore.clone(),
-            rules: gather_rules(&watcher_config)?,
+            rules: gather_rules(watcher_config)?,
         };
         let ingress_tx_clone = ingress_tx.clone();
         let ctx2 = ctx.clone();
@@ -87,7 +87,7 @@ fn spawn_watcher(
                     }
                     match rx.recv_timeout(std::time::Duration::from_millis(200)) {
                         Ok(ev) => {
-                            debug!("raw event {:?}", ev);
+                            debug!("raw event {ev:?}");
                             if ingress_tx_clone
                                 .send(PipelineMsg {
                                     event: ev,

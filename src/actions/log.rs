@@ -16,12 +16,12 @@ impl LogAction {
 
 impl Action for LogAction {
     fn run(&self, path: &Path, _ctx: &EngineCtx) -> anyhow::Result<()> {
-        debug!("Starting log action for path: {:?}", path);
+        debug!("Starting log action for path: {path:?}");
 
         let template = Template::new(self.message.clone());
         let rendered_message = template.render(path);
 
-        info!("Log: {}", rendered_message);
+        info!("Log: {rendered_message}");
         Ok(())
     }
 }

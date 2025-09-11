@@ -42,14 +42,22 @@ mod tests {
     #[test]
     fn matches_exact_extension() {
         let cond = ExtensionCondition::new("txt".into());
-        let ev = EventInfo { path: PathBuf::from("/x/file.txt"), event: Event::Any, meta: None };
+        let ev = EventInfo {
+            path: PathBuf::from("/x/file.txt"),
+            event: Event::Any,
+            meta: None,
+        };
         assert!(cond.matches(&ev, &ctx()));
     }
 
     #[test]
     fn does_not_match_when_extension_differs() {
         let cond = ExtensionCondition::new("txt".into());
-        let ev = EventInfo { path: PathBuf::from("/x/file.md"), event: Event::Any, meta: None };
+        let ev = EventInfo {
+            path: PathBuf::from("/x/file.md"),
+            event: Event::Any,
+            meta: None,
+        };
         assert!(!cond.matches(&ev, &ctx()));
     }
 }

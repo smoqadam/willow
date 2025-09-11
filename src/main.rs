@@ -28,14 +28,17 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let cli = Cli::parse();
-    debug!("Parsed CLI arguments: {:?}", cli);
+    debug!("Parsed CLI arguments: {cli:?}");
 
     let config = config::load(cli.config)?;
-    debug!("Parsed CLI arguments: {:?}", config);
+    debug!("Parsed CLI arguments: {config:?}");
 
     let handle = if cli.dry_run {
-        use crate::fs::{DryRunFs, StdFs, Fs};
-        engine::start_with_fs(&config, Arc::new(DryRunFs::new(Arc::new(StdFs::new()) as Arc<dyn Fs>)))?
+        use crate::fs::{DryRunFs, Fs, StdFs};
+        engine::start_with_fs(
+            &config,
+            Arc::new(DryRunFs::new(Arc::new(StdFs::new()) as Arc<dyn Fs>)),
+        )?
     } else {
         engine::start(&config)?
     };

@@ -58,9 +58,9 @@ mod tests {
     use crate::engine::EngineCtx;
     use crate::fs::StdFs;
     use crate::models::{Event, EventInfo, FileMeta};
+    use std::fs as stdfs;
     use std::path::PathBuf;
     use std::sync::{Arc, atomic::AtomicBool};
-    use std::fs as stdfs;
 
     fn ctx_std() -> EngineCtx {
         EngineCtx::new(Arc::new(StdFs::new()), Arc::new(AtomicBool::new(false)))
@@ -69,18 +69,54 @@ mod tests {
     #[test]
     fn size_gt_with_meta_short_circuits() {
         let cond = SizeGtCondition::new(10);
-        let ev = EventInfo { path: PathBuf::from("/tmp/a"), event: Event::Any, meta: Some(FileMeta { size: Some(11), modified: None, name: None, ext: None }) };
+        let ev = EventInfo {
+            path: PathBuf::from("/tmp/a"),
+            event: Event::Any,
+            meta: Some(FileMeta {
+                size: Some(11),
+                modified: None,
+                name: None,
+                ext: None,
+            }),
+        };
         assert!(cond.matches(&ev, &ctx_std()));
-        let ev2 = EventInfo { path: PathBuf::from("/tmp/a"), event: Event::Any, meta: Some(FileMeta { size: Some(9), modified: None, name: None, ext: None }) };
+        let ev2 = EventInfo {
+            path: PathBuf::from("/tmp/a"),
+            event: Event::Any,
+            meta: Some(FileMeta {
+                size: Some(9),
+                modified: None,
+                name: None,
+                ext: None,
+            }),
+        };
         assert!(!cond.matches(&ev2, &ctx_std()));
     }
 
     #[test]
     fn size_lt_with_meta_short_circuits() {
         let cond = SizeLtCondition::new(10);
-        let ev = EventInfo { path: PathBuf::from("/tmp/a"), event: Event::Any, meta: Some(FileMeta { size: Some(9), modified: None, name: None, ext: None }) };
+        let ev = EventInfo {
+            path: PathBuf::from("/tmp/a"),
+            event: Event::Any,
+            meta: Some(FileMeta {
+                size: Some(9),
+                modified: None,
+                name: None,
+                ext: None,
+            }),
+        };
         assert!(cond.matches(&ev, &ctx_std()));
-        let ev2 = EventInfo { path: PathBuf::from("/tmp/a"), event: Event::Any, meta: Some(FileMeta { size: Some(11), modified: None, name: None, ext: None }) };
+        let ev2 = EventInfo {
+            path: PathBuf::from("/tmp/a"),
+            event: Event::Any,
+            meta: Some(FileMeta {
+                size: Some(11),
+                modified: None,
+                name: None,
+                ext: None,
+            }),
+        };
         assert!(!cond.matches(&ev2, &ctx_std()));
     }
 
@@ -88,17 +124,26 @@ mod tests {
     fn size_checks_fallback_to_fs_metadata() {
         let dir = PathBuf::from("target/test_size");
         let _ = stdfs::create_dir_all(&dir);
-        let file_small = stdfs::canonicalize(dir.join("small.bin")).unwrap_or(dir.join("small.bin"));
+        let file_small =
+            stdfs::canonicalize(dir.join("small.bin")).unwrap_or(dir.join("small.bin"));
         stdfs::write(&file_small, vec![0u8; 5]).unwrap();
 
-        let ev = EventInfo { path: file_small.clone(), event: Event::Any, meta: None };
+        let ev = EventInfo {
+            path: file_small.clone(),
+            event: Event::Any,
+            meta: None,
+        };
         let ctx = ctx_std();
         assert!(SizeLtCondition::new(10).matches(&ev, &ctx));
         assert!(!SizeGtCondition::new(10).matches(&ev, &ctx));
 
         let file_big = stdfs::canonicalize(dir.join("big.bin")).unwrap_or(dir.join("big.bin"));
         stdfs::write(&file_big, vec![0u8; 20]).unwrap();
-        let ev2 = EventInfo { path: file_big.clone(), event: Event::Any, meta: None };
+        let ev2 = EventInfo {
+            path: file_big.clone(),
+            event: Event::Any,
+            meta: None,
+        };
         assert!(SizeGtCondition::new(10).matches(&ev2, &ctx));
         assert!(!SizeLtCondition::new(10).matches(&ev2, &ctx));
     }
